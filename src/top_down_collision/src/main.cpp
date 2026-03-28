@@ -22,6 +22,7 @@
 #include "bn_sprite_items_chest.h"
 #include "bn_regular_bg_items_map.h"
 
+#include "common_info.h"
 #include "common_variable_8x16_sprite_font.h"
 
 namespace
@@ -114,7 +115,9 @@ int main()
 
     show_title_screen(text_generator, text_sprites);
 
-    while(true)
+    chest_map_position = bn::point(dog_map_position.x() + 2, dog_map_position.y());
+
+    while (true)
     {
         if(current_scene == scene_type::TITLE)
         {
@@ -235,6 +238,10 @@ int main()
                 bn::fixed chest_sprite_y =
                         (chest_map_position.y() * 8) - (map_item.dimensions().height() * 4) + 4;
                 chest_sprite->set_position(chest_sprite_x, chest_sprite_y);
+
+                // Z-Order refresh: we set the Z-Order based on the Y position of the sprites.
+                dog_sprite->set_z_order(-dog_sprite_y.integer());
+                chest_sprite->set_z_order(-chest_sprite_y.integer());
             }
         }
 
