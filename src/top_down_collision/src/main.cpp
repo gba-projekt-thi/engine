@@ -21,6 +21,7 @@
 #include "bn_sprite_items_dog.h"
 #include "bn_sprite_items_chest.h"
 #include "bn_regular_bg_items_map.h"
+#include "bn_regular_bg_items_map2.h"
 
 #include "common_info.h"
 #include "common_variable_8x16_sprite_font.h"
@@ -57,14 +58,26 @@ namespace
         text_generator.generate(-50, -50, "START: TITLE", text_sprites);
     }
 
-    // Resets the current map and the object positions.
-    void load_map(bn::regular_bg_ptr& map_bg,
-                  bn::point& dog_map_position,
-                  bn::point& chest_map_position)
+    enum class map_type
     {
-        map_bg = bn::regular_bg_items::map.create_bg(0, 0);
+        MAP1,
+        MAP2
+    };
+
+    // Resets the current map and the object positions.
+    bn::regular_bg_ptr load_map(map_type selected_map,
+                                bn::point& dog_map_position,
+                                bn::point& chest_map_position)
+    {
         dog_map_position = bn::point(16, 16);
         chest_map_position = bn::point(18, 16);
+
+        if(selected_map == map_type::MAP1)
+        {
+            return bn::regular_bg_items::map.create_bg(0, 0);
+        }
+
+        return bn::regular_bg_items::map2.create_bg(0, 0);
     }
 
     // Returns true only for the one wall that should trigger a map change.
@@ -104,6 +117,7 @@ int main()
     bn::vector<bn::sprite_ptr, text_sprites_capacity> text_sprites;
 
     scene_type current_scene = scene_type::TITLE;
+    map_type current_map = map_type::MAP1;
 
     bn::optional<bn::regular_bg_ptr> map_bg;
     bn::optional<bn::sprite_ptr> dog_sprite;
@@ -127,12 +141,10 @@ int main()
 
                 text_sprites.clear();
 
-                map_bg = bn::regular_bg_items::map.create_bg(0, 0);
+                current_map = map_type::MAP1;
+                map_bg = load_map(current_map, dog_map_position, chest_map_position);
                 dog_sprite = bn::sprite_items::dog.create_sprite(0, 0);
                 chest_sprite = bn::sprite_items::chest.create_sprite(0, 0);
-
-                dog_map_position = bn::point(16, 16);
-                chest_map_position = bn::point(18, 16);
 
                 show_game_ui(text_generator, text_sprites);
                 current_scene = scene_type::GAME;
@@ -157,10 +169,14 @@ int main()
             }
             else
             {
-                const bn::regular_bg_map_item& map_item = bn::regular_bg_items::map.map_item();
+                const bn::regular_bg_map_item& map_item =
+                        (current_map == map_type::MAP1)
+                                ? bn::regular_bg_items::map.map_item()
+                                : bn::regular_bg_items::map2.map_item();
 
-                // Tile (0, 0) is used here as the reference for a walkable tile.
-                bn::regular_bg_map_cell valid_map_cell = map_item.cell(0, 0);
+                // The tile at the player start position is used as the reference for a walkable tile.
+                // This supports maps where walkable tile index is not the same as (0,0).
+                bn::regular_bg_map_cell valid_map_cell = map_item.cell(dog_map_position);
                 int valid_tile_index = bn::regular_bg_map_cell_info(valid_map_cell).tile_index();
 
                 bn::point new_dog_map_position = dog_map_position;
@@ -219,7 +235,13 @@ int main()
                     if(is_map_exit(dog_map_position, direction))
                     {
                         fade_out();
-                        load_map(*map_bg, dog_map_position, chest_map_position);
+
+                        current_map = (current_map == map_type::MAP1)
+                                        ? map_type::MAP2
+                                        : map_type::MAP1;
+
+                        map_bg = load_map(current_map, dog_map_position, chest_map_position);
+
                         fade_in();
                     }
 
