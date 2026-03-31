@@ -1,1 +1,6 @@
 src/**/build/
+.sh
+doku
+.elf
+.gn
+.sav
