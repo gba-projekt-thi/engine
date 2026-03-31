@@ -1,0 +1,30 @@
+{
+    "activeFile": "tilemap_8_8/tilemap.tmx",
+    "expandedProjectPaths": [
+    ],
+    "fileStates": {
+        "tilemap_8_8/simple_tileset.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "tilemap_8_8/tilemap.tmx": {
+            "scale": 1.3619140625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 255.8898608920121,
+                "y": 256.25699125197195
+            }
+        }
+    },
+    "openFiles": [
+        "tilemap_8_8/tilemap.tmx",
+        "tilemap_8_8/simple_tileset.tsx"
+    ],
+    "project": "",
+    "recentFiles": [
+        "tilemap_8_8/simple_tileset.tsx",
+        "tilemap_8_8/tilemap.tmx",
+        "simple_tileset.tsx",
+        "simple_tilemap.tmx"
+    ]
+}
