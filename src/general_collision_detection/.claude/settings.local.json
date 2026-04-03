@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s https://gvaliente.github.io/butano/import.html)",
+      "Bash(curl -s https://gvaliente.github.io/butano/faq.html)",
+      "WebFetch(domain:gvaliente.github.io)",
+      "Bash(/c/Python312/python:*)"
+    ]
+  }
+}
