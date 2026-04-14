@@ -1,7 +1,9 @@
 src/**/build/
-.sh
+*.sh
 doku
-.elf
-.gn
-.sav
+*.elf
+*.gn
+*.sav
+*.gba
 .devcontainer/devcontainer.json
+.vscode
