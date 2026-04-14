@@ -78,6 +78,37 @@ If your map is larger than 240x160: The camera scrolls and stops at the edges.
 
 If your map is smaller than 240x160: The camera stays locked to the center of the map.
 
+---> = Data Flow (Position, Speed)
+ <-> = Camera Link (sync movement)
+┌───────────────────────────────────────────────────────────────────┐
+│                          CAMERA MODULE                            │
+│                  (rpg::Camera Singleton)                          │
+├───────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  [ Input ]              [ Logic: follow() ]          [ Output ]   │
+│                                                                   │
+│  Hero Pos  ─────┐        ┌─────────────────┐        ┌───────────┐ │
+│  (World X,Y)    │        │ 1. Clamp to Map │        │ GBA Screen│ │
+│                 ├───────▶│ 2. Apply Lerp  ├───────▶│ Viewport  │ │
+│  Lerp Speed   ──┘        │ 3. Update Ptr   │        └───────────┘ │
+│                          └────────┬────────┘             ▲        │
+│                                   │                      │        │
+│                                   ▼                      │        │
+│                         ┌─────────────────┐              │        │
+│                         │ bn::camera_ptr  │──────────────┘        │
+│                         │ (Internal GBA)  │                       │
+│                         └─────────────────┘                       │
+│                                  ▲                                │
+│                                  │ (link via .ptr())              │
+│          ┌───────────────────────┴──────────────────────┐         │
+│          │                       │                      │         │
+│   ┌──────┴──────┐         ┌──────┴──────┐        ┌──────┴──────┐  │
+│   │ Map Sprite  │         │ Hero Sprite │        │ NPC Sprites │  │
+│   │ (uses cam)  │◀────────│(provides pos)────────▶ (uses cam) │  │
+│   └─────────────┘         └─────────────┘        └─────────────┘  │
+│                                                                   │
+└───────────────────────────────────────────────────────────────────┘
+
 ## Troubleshooting
 **Q: My player moves, but the map stays still!**
 
