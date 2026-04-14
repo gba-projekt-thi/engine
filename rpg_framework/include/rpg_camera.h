@@ -29,7 +29,7 @@ namespace rpg {
          * @brief Updates the camera to follow a specific world coordinate.
          * @param target_pos The current world position of the player/target.
          */
-        void follow(const bn::fixed_point& target_pos);
+        void follow(const bn::fixed_point& target_pos, bn::fixed lerp_speed = 0.1);
 
         /**
          * @brief Converts a world-space coordinate to a GBA screen-space coordinate.

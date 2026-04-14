@@ -9,6 +9,20 @@ This module provides a **Singleton-based Camera Controller** specifically design
 * **World-to-Screen Projection:** Helper functions to convert absolute world coordinates into relative screen coordinates (essential for UI/HUD).
 * **Small Map Support:** Gracefully handles maps that are smaller than the GBA screen resolution (240x160).
 
+### Camera Smoothing (Lerping)
+The camera follows the target smoothly using linear interpolation. You can adjust the "snappiness" of the camera in the `follow` function.
+
+```cpp
+// Default: Uses 0.1 (Smooth and organic)
+rpg::Camera::instance().follow(player.pos());
+
+// Faster: Uses 0.2 (Snappier, good for action)
+rpg::Camera::instance().follow(player.pos(), 0.2);
+
+// Slower: Uses 0.05 (Very cinematic/heavy feel)
+rpg::Camera::instance().follow(player.pos(), 0.05);
+```
+
 ---
 
 ## Quick Start

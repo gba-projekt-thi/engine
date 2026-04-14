@@ -11,25 +11,25 @@ namespace rpg {
         _map_h = map_h;
     }
 
-    void Camera::follow(const bn::fixed_point& target_pos) {
-        // Half of the GBA screen dimensions (240x160)
-        bn::fixed half_width = 120;
-        bn::fixed half_height = 80;
+void Camera::follow(const bn::fixed_point& target_pos, bn::fixed lerp_speed) {
+        // 1. Calculate the ideal target (where we WANT to be)
+        // Same clamping logic as before to respect map boundaries
+        bn::fixed target_x = bn::clamp(target_pos.x(), bn::fixed(120), bn::fixed(_map_w - 120));
+        bn::fixed target_y = bn::clamp(target_pos.y(), bn::fixed(80), bn::fixed(_map_h - 80));
 
-        // If the map is smaller than the screen, we just stay at the center
-        // Otherwise, we clamp the focus point so the camera doesn't peek over the edges
-        bn::fixed x_min = bn::min(half_width, bn::fixed(_map_w) / 2);
-        bn::fixed x_max = bn::max(half_width, bn::fixed(_map_w) - half_width);
-        
-        bn::fixed y_min = bn::min(half_height, bn::fixed(_map_h) / 2);
-        bn::fixed y_max = bn::max(half_height, bn::fixed(_map_h) - half_height);
+        // 2. Get the current camera position
+        bn::fixed current_x = _camera.x();
+        bn::fixed current_y = _camera.y();
 
-        bn::fixed clamped_x = bn::clamp(target_pos.x(), x_min, x_max);
-        bn::fixed clamped_y = bn::clamp(target_pos.y(), y_min, y_max);
+        // 3. Apply Lerp (Linear Interpolation)
+        // 0.1 means the camera covers 10% of the distance every frame.
+        // Lower values (0.05) make it smoother/slower. 
+        // Higher values (0.2) make it snappier.
+        bn::fixed new_x = current_x + (target_x - current_x) * lerp_speed;
+        bn::fixed new_y = current_y + (target_y - current_y) * lerp_speed;
 
-        // Setting the camera position. 
-        // We subtract the half-dimensions to align world (0,0) with screen (0,0)
-        _camera.set_position(clamped_x - 120, clamped_y - 80);
+        // 4. Update the actual camera pointer
+        _camera.set_position(new_x, new_y);
     }
 
     bn::fixed_point Camera::to_screen(const bn::fixed_point& world_pos) const {
