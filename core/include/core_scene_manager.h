@@ -1,7 +1,7 @@
 #pragma once
 
 #include "bn_unique_ptr.h"
-#include "bn_move.h"
+#include "bn_utility.h"
 #include "core_scene.h"
 
 namespace core {
