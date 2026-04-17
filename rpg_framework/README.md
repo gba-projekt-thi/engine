@@ -121,3 +121,61 @@ Ensure the player sprite is also linked to the camera pointer using set_camera()
 **Q: The camera jitters at the map edges.**
 
 Check if the dimensions passed to init(w, h) match your actual asset size exactly.
+
+# ⚔️ RPG Level Framework
+
+This module extends the core system specifically for Top-Down RPG mechanics. It bridges the gap between the global `SceneManager` and the specialized `rpg::Camera`.
+
+---
+
+## ✨ Features
+
+* **Automated Camera:** Every `rpg::LevelScene` handles the `rpg::Camera` initialization and updates automatically.
+* **Focus Tracking:** By simply updating the `_camera_focus` point, the camera will smoothly follow your target (Player, NPC, or Cutscene event).
+* **Boilerplate Reduction:** Provides helper methods to link Butano's raw pointers to the camera system in a single line.
+
+---
+
+## 🛠️ How to Build a Level
+
+Instead of inheriting from `core::Scene`, the RPG team should use `rpg::LevelScene`. It uses the **Template Method Pattern** to ensure camera logic always runs after your gameplay logic to prevent "frame lag".
+
+### Example implementation:
+
+```cpp
+#include "rpg_level_scene.h"
+
+class ForestLevel : public rpg::LevelScene {
+public:
+    // Pass the map dimensions to the constructor
+    ForestLevel() : rpg::LevelScene(1024, 1024) {
+        // Use helpers to link assets to the camera
+        setup_background(_map);
+        setup_sprite(_hero);
+    }
+
+    void update_logic() override {
+        // 1. Handle your gameplay (input, collisions)
+        // ...
+
+        // 2. Tell the framework what to look at
+        _camera_focus = _hero.position();
+    }
+
+private:
+    bn::regular_bg_ptr _map;
+    bn::sprite_ptr _hero;
+};
+```
+
+## 📖 API Reference
+
+### Protected Members (Accessible by your Level)
+* _camera_focus (bn::fixed_point): The target coordinate for the camera.
+
+* setup_background(bg): Registers a background with the camera system.
+
+* setup_sprite(sprite): Registers a sprite with the camera system.
+
+## Virtual Methods
+* update_logic(): Implement your frame-by-frame gameplay here. Do not override update(), as it is marked final to protect the camera synchronization.
