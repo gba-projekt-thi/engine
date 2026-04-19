@@ -30,6 +30,13 @@ public:
         }
     }
 
+    void clear_all() {
+        for(int i = 0; i < _count; ++i) {
+            _sprites[i] = nullptr;
+        }
+        _count = 0;
+    }
+
     void sync_all(const Camera& camera);
 
 private:
