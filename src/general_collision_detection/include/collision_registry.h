@@ -27,6 +27,12 @@ public:
     void register_body(StaticBody* b);
     void unregister_body(StaticBody* b);
 
+    /**
+     * @brief Resets the registry. 
+     * Call this in your Scene destructor to prevent dangling pointers!
+     */
+    void clear_all();
+
     // calls physics_update() on every body where needs_physics_update == true
     void update_all();
 

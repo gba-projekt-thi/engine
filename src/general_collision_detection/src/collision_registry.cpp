@@ -31,3 +31,10 @@ void CollisionRegistry::update_all() {
         }
     }
 }
+
+void CollisionRegistry::clear_all() {
+    for(int i = 0; i < _count; ++i) {
+        _bodies[i] = nullptr;
+    }
+    _count = 0;
+}
