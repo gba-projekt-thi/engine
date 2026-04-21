@@ -80,6 +80,8 @@ If your map is smaller than 240x160: The camera stays locked to the center of th
 
 ---> = Data Flow (Position, Speed)
  <-> = Camera Link (sync movement)
+
+```
 ┌───────────────────────────────────────────────────────────────────┐
 │                          CAMERA MODULE                            │
 │                  (rpg::Camera Singleton)                          │
@@ -108,6 +110,7 @@ If your map is smaller than 240x160: The camera stays locked to the center of th
 │   └─────────────┘         └─────────────┘        └─────────────┘  │
 │                                                                   │
 └───────────────────────────────────────────────────────────────────┘
+```
 
 ## Troubleshooting
 **Q: My player moves, but the map stays still!**
