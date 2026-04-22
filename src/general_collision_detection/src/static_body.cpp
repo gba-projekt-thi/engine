@@ -2,7 +2,7 @@
 
 StaticBody::StaticBody(bn::fixed x, bn::fixed y, bn::fixed w, bn::fixed h,
                        uint16_t layers)
-    : x(x), y(y), width(w), height(h), layers(layers) {
+    : pos{x, y, w, h}, layers(layers) {
     CollisionRegistry::instance().register_body(this);
 }
 
