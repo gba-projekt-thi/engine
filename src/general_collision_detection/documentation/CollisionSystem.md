@@ -71,6 +71,8 @@
 
 <br>
 
+<br>
+
 # Important Classes + Bitmasks
 
 ### StaticBody
@@ -93,10 +95,16 @@
 
 <br>
 
+<br>
+
 # Unified Interface
 
 `Position` and `enable` / `disable` work the same way across all classes —
 `Sprite`, `StaticBody`, `CollisionShape`, `PhysicsBody`.
+
+<br>
+
+---
 
 ### Position
 - Every class has a `pos` attribute
@@ -105,8 +113,9 @@
 - `player.pos.move(x, y)` → teleports regardless of collision
 - `player.move(x, y)` → moves only if collision allows
 
-// `move_attachments(x, y)`
-// `x == pos.x` and `y == pos.y`
+<br>
+
+---
 
 ### Enable / Disable
 Every class has `enable()`, `disable()`, `is_enabled()`
@@ -117,6 +126,8 @@ Every class has `enable()`, `disable()`, `is_enabled()`
   - `disable()` → all `on_exit()` fire
   - `enable()` → all `on_enter()` fire
   - `get_collision()` still works when disabled
+
+<br>
 
 <br>
 
@@ -148,6 +159,8 @@ void on_enter(uint16_t hit_layers, StaticBody* body) override {
 
 <br>
 
+<br>
+
 # `move_attachments()`
 
 Move all dependent sprites and collision shapes that should synchronously move with this physics body.  
@@ -158,15 +171,92 @@ Then `move_attachments(x, y)` just forwards `move(x, y)` — no per-attachment m
 
 <br>
 
+<br>
+
 **Stats for nerds — Call Order**
 1. `update()` — logic + player position
 2. `move_velocity()` — moves character with set velocity
 3. `move_attachments()` — moves dependent shapes / sprites
 
-`move_velocity()` runs automatically after `update()`, so attachments must move *after* that — which is why they get their own function.
+`move_velocity()` runs automatically after `update()`, so attachments must move *after* that — which is why it gets it's own function.
 
 <br>
 
-# Array sizing
+<br>
 
-comming soon ...
+# Registry
+
+The `CollisionRegistry` is the central bookkeeping system (Singleton) for all collision data. Every `StaticBody`, `PhysicsBody`, and `CollisionShape` registers itself here on creation.
+
+<br>
+
+---
+
+### Array of Registered Elements
+The Registry holds for `StaticBody` `CollisionShape` `PhysicsBody` `MapRect` an Array and `register_..()` / `unregister_..()` functions. 
+
+**Array Sizes**:
+- `MAX_STATIC_BODIES = 64`
+- `MAX_PHYSICS_BODIES = 16`
+- `MAX_COLLISION_SHAPES = 32`
+- `MAX_MAP_RECTS = 32`
+
+<br>
+
+---
+
+### MapRect
+A lightweight collision rectangle (like Physics Body) generated from the tilemap — no class, just coordinates and a `layers` bitmask. See Struct `MapRect`. 
+
+<br>
+
+---
+
+### Collision Result
+An Array `hits` of Collision Hits with `count`. 
+
+**`CollisionHit`**: Contains `Layer` & `StaticBody` (like `on_enter()`)
+
+**`combined_layers()`**: Returns a single 16 Bit value to compare with a mask.
+
+```cpp
+// Use Physics Body Probe Functions
+CollisionResult prb_btm = player.probe_bottom();
+bool grounded = (prb_btm.combined_layers() & MASK_TILEMAP) != 0;
+```
+
+```cpp
+// Damage all Enemies on a Pixel
+CollisionResult res = CollisionRegistry::check_point(x, y, MASK_ENEMY);
+for(int i = 0; i < res.count; i++){
+    StaticBody* body = res.hits[i].body;
+    if(body && body->body_type == TYPE_ENEMY){
+        Enemy& enemy = static_cast<Enemy&>(*body);
+        enemy.dec_health(20);
+    }
+}
+```
+
+**Array Size**: `MAX_HITS = 8`: Maximum number of Physics Bodies every Collision can see at once
+
+<br>
+
+---
+
+### `check_rect()` / `check_point()`
+One-shot collision queries against static bodies and map rects. Used under the hood by the classes.
+
+**Example Custom Treasure Probe**
+
+```cpp
+bool probe_treasure_behind_wall() {
+    auto res = CollisionRegistry::check_rect(
+        pos.x + offset_x, pos.y + offset_y,
+        width, height, TREASURE_MASK);
+    return res.count > 0;
+}
+```
+
+<br>
+
+<br>
