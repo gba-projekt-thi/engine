@@ -54,7 +54,7 @@ void on_enter(uint16_t hit_layers, StaticBody* body) override {
 `probe_bottom()`, `probe_top()`, `probe_left()`, `probe_right()` (on `PhysicsBody`) return a `CollisionResult` for a region 1px outside the given edge. Use `combined_layers()` to AND against a mask.
 
 ```cpp
-bool grounded = probe_bottom().combined_layers() & MASK_TILEMAP;
+bool grounded = probe_bottom(MASK_TILEMAP).any();
 ```
 
 See `CollisionSystem.md` and `CollisionRegistry::check_rect` for the underlying query.
