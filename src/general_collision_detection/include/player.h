@@ -3,6 +3,7 @@
 #include "physics_body.h"
 #include "sprite.h"
 #include "enemy.h"
+#include "collision_config.h"
 #include "bn_keypad.h"
 #include "bn_sprite_palette_ptr.h"
 #include "bn_color.h"
@@ -10,14 +11,8 @@
 class Player : public PhysicsBody {
 
 public:
-    static constexpr uint8_t  BODY_TYPE   = 1;         // for casting in on_enter
-    static constexpr uint16_t LAYERS      = 0x0001;   // what am I
-    static constexpr uint16_t ENEMY_LAYER = 0x0002;
-    static constexpr uint16_t DOOR_LAYER  = 0x0004;
-    static constexpr uint16_t TILEMAP     = 0x8000;
-
-    static constexpr uint16_t MASK  = ENEMY_LAYER | DOOR_LAYER;                // what I detect  (on_enter / on_exit)
-    static constexpr uint16_t BLOCK = 0xFFFF & ~ENEMY_LAYER & ~DOOR_LAYER;     // what blocks me (pass through enemies and doors)
+    static constexpr uint16_t MASK  = MASK_ENEMY | MASK_DOOR;                // what I detect  (on_enter / on_exit)
+    static constexpr uint16_t BLOCK = 0xFFFF & ~MASK_ENEMY & ~MASK_DOOR;     // what blocks me (pass through enemies and doors)
 
     // tweak these to taste
     bn::fixed gravity        = bn::fixed(0.15);
@@ -32,9 +27,9 @@ public:
     bn::fixed spawn_y;
 
     Player(bn::fixed start_x, bn::fixed start_y, bn::fixed w, bn::fixed h)
-        : PhysicsBody(start_x, start_y, w, h, LAYERS, MASK, BLOCK),
+        : PhysicsBody(start_x, start_y, w, h, MASK_PLAYER, MASK, BLOCK),
           spawn_x(start_x), spawn_y(start_y) {
-        body_type = BODY_TYPE;
+        body_type = TYPE_PLAYER;
         vel_max = 4;
     }
 
@@ -51,7 +46,7 @@ public:
             dec_velocity(friction, 0);
         }
 
-        bool grounded = probe_bottom().combined_layers() & TILEMAP;
+        bool grounded = probe_bottom(MASK_TILEMAP).any();
 
         if(bn::keypad::a_pressed()) {
             if(grounded) {
@@ -82,11 +77,11 @@ public:
 
     void on_enter(uint16_t hit_layers, StaticBody* body) override {
         // 1. check layer
-        if(hit_layers & ENEMY_LAYER) {
+        if(hit_layers & MASK_ENEMY) {
             // 2. check body is not nullptr (nullptr = map rect)
             if(body) {
                 // 3. check body_type matches Enemy
-                if(body->body_type == Enemy::BODY_TYPE) {
+                if(body->body_type == TYPE_ENEMY) {
                     // 4. safe to cast
                     Enemy& enemy = static_cast<Enemy&>(*body);
                     // 5. access the enemy's attributes
@@ -98,20 +93,20 @@ public:
                 }
             }
         }
-        if(hit_layers & DOOR_LAYER) {
+        if(hit_layers & MASK_DOOR) {
             on_door = true;
         }
     }
 
     void on_exit(uint16_t hit_layers, StaticBody* body) override {
-        if((hit_layers & ENEMY_LAYER) && body && body->body_type == Enemy::BODY_TYPE) {
+        if((hit_layers & MASK_ENEMY) && body && body->body_type == TYPE_ENEMY) {
             Enemy& enemy = static_cast<Enemy&>(*body);
             if(enemy.sprite) {
                 bn::sprite_palette_ptr pal = enemy.sprite->sprite().palette();
                 pal.set_fade(bn::color(31, 31, 31), 0);
             }
         }
-        if(hit_layers & DOOR_LAYER) {
+        if(hit_layers & MASK_DOOR) {
             on_door = false;
         }
     }

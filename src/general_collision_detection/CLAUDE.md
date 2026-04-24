@@ -66,7 +66,11 @@ class Player : public PhysicsBody {
 
 - `move(dx, dy)` — positional move with collision resolution
 - `set_velocity()`, `inc_velocity()`, `dec_velocity()`, `apply_impulse()` — velocity control
-- `probe_bottom()`, `probe_top()`, `probe_left()`, `probe_right()` — returns combined `layers` bitmask of anything 1px outside that edge (3 sample points per edge). Used for ground/wall checks.
+- `probe_bottom(mask)`, `probe_top(mask)`, `probe_left(mask)`, `probe_right(mask)` — returns a `CollisionResult` for a 1px region outside that edge. Pass a mask to filter at query time (defaults to `0xFFFF` = detect everything). Use `.any()` for a bool, `.combined_layers()` if you need to distinguish layers.
+
+```cpp
+bool grounded = probe_bottom(MASK_TILEMAP).any();
+```
 
 ### CollisionRegistry
 

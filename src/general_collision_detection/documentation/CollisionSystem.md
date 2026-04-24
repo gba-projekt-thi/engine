@@ -30,7 +30,7 @@
        ┆       │ velocity                 │        │
        ┆       │   set | inc | dec        │        │
        ┆       │                          │        │
-       ┆       │ probes                   │        │
+       ┆       │ probes(mask = 0xFFFF)    │        │
        ┆       │   bottom|top|left|right  │        │
        ┆       └─────┬───────────┬────────┘        │
        ┆             ▲           ▲                 │
@@ -65,6 +65,7 @@
 │ hits : CollisionHit[]  │   │ layers           │   │ x_min, y_min           │
 │ count                  │   │ body             │   │ x_max, y_max, layers   │
 │                        │   └──────────────────┘   └────────────────────────┘
+│ any()                  │
 │ combined_layers()      │
 └────────────────────────┘
 ```
@@ -217,12 +218,13 @@ An Array `hits` of Collision Hits with `count`.
 
 **`CollisionHit`**: Contains `Layer` & `StaticBody` (like `on_enter()`)
 
+**`any()`**: `true` if the probe hit anything (after mask filtering). Use when you only care *whether* something was hit.
+
 **`combined_layers()`**: Returns a single 16 Bit value to compare with a mask.
 
 ```cpp
-// Use Physics Body Probe Functions
-CollisionResult prb_btm = player.probe_bottom();
-bool grounded = (prb_btm.combined_layers() & MASK_TILEMAP) != 0;
+// Probes take a mask — filtering happens inside check_rect, not after.
+bool grounded = player.probe_bottom(MASK_TILEMAP).any();
 ```
 
 ```cpp
@@ -256,6 +258,20 @@ bool probe_treasure_behind_wall() {
     return res.count > 0;
 }
 ```
+
+<br>
+
+<br>
+
+# Collision Config
+
+`collision_config.h` collects every `MASK_*` and `TYPE_*` value in one place. It's a proposed pattern, not a requirement.
+
+**`MASK_*`**: 16-bit layer bitmasks — one bit per layer, used for `layers`, `mask`, and `block`.
+**ex.:** `constexpr uint16_t MASK_PLAYER = 0x0001;`
+
+**`TYPE_*`**: 8-bit body-type IDs for any `StaticBody` subclass that needs to be cast in `on_enter()` / `on_exit()`.
+**ex.:** `constexpr uint8_t TYPE_PLAYER = 2;`
 
 <br>
 

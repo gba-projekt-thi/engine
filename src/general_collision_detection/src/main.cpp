@@ -17,6 +17,7 @@
 #include "common_variable_8x8_sprite_font.h"
 
 #include "collision_registry.h"
+#include "collision_config.h"
 #include "tilemap_data.h"
 #include "camera.h"
 #include "sprite.h"
@@ -24,10 +25,7 @@
 #include "player.h"
 #include "enemy.h"
 
-// body_type constants — game-specific, not engine-defined
-// 0 = StaticBody (default), then each class defines its own:
-//   Player::BODY_TYPE = 1
-//   Enemy::BODY_TYPE  = 2
+// MASK_* and TYPE_* live in collision_config.h
 
 int main() {
     bn::core::init();
@@ -63,7 +61,7 @@ int main() {
     Sprite door_sprite(bn::sprite_items::door.create_sprite(0, 0), door_x, door_y);
     door_sprite.sprite().set_z_order(1);
 
-    StaticBody door(door_x, door_y, 16, 25, Player::DOOR_LAYER);
+    StaticBody door(door_x, door_y, 16, 25, MASK_DOOR);
     door.sprite = &door_sprite;
 
     // --- Enemy ---

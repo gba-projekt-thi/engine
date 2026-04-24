@@ -2,16 +2,15 @@
 
 #include "physics_body.h"
 #include "laser_weapon.h"
+#include "collision_config.h"
 
 class Enemy : public PhysicsBody {
 
 public:
-    static constexpr uint8_t  BODY_TYPE = 2;                    // for casting in on_enter
-    static constexpr uint16_t LAYERS = 0x0002;                  // what am I
-    static constexpr uint16_t MASK   = 0x0001;                  // what I detect  (player)
-    static constexpr uint16_t BLOCK  = 0xFFFF & ~0x0001;        // what blocks me (walls, not player)
+    static constexpr uint16_t MASK   = MASK_PLAYER;                  // what I detect  (player)
+    static constexpr uint16_t BLOCK  = 0xFFFF & ~MASK_PLAYER;        // what blocks me (walls, not player)
 
-    static constexpr uint16_t LASER_MASK = 0x0001;              // laser detects player
+    static constexpr uint16_t LASER_MASK = MASK_PLAYER;              // laser detects player
     static constexpr bn::fixed LASER_WIDTH  = 40;
     static constexpr bn::fixed LASER_HEIGHT = 1;
     static constexpr bn::fixed LASER_OFFSET_X = 28;             // center of laser from enemy center
@@ -21,14 +20,14 @@ public:
 
     Enemy(bn::fixed start_x, bn::fixed start_y, bn::fixed w, bn::fixed h,
           bn::fixed patrol_x1, bn::fixed patrol_x2, bn::fixed patrol_speed)
-        : PhysicsBody(start_x, start_y, w, h, LAYERS, MASK, BLOCK),
+        : PhysicsBody(start_x, start_y, w, h, MASK_ENEMY, MASK, BLOCK),
           laser_left(start_x, start_y, LASER_WIDTH, LASER_HEIGHT, LASER_MASK),
           laser_right(start_x, start_y, LASER_WIDTH, LASER_HEIGHT, LASER_MASK),
           _patrol_x1(patrol_x1),
           _patrol_x2(patrol_x2),
           _patrol_speed(patrol_speed),
           _direction(1) {
-        body_type = BODY_TYPE;
+        body_type = TYPE_ENEMY;
         vel_max = patrol_speed;
 
         // set offsets so move() places them correctly
