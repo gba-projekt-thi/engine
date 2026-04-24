@@ -1,122 +1,90 @@
-# General Collision Detection - Butano GBA Project
+# Overview
 
-## Butano Engine
+This is a [Butano](https://github.com/GValiente/butano/tree/master) C++ GBA project. When anything about the engine API is unclear, **always** consult the [Butano documentation](https://gvaliente.github.io/butano/annotated.html) or the GitHub source before guessing.
 
-This is a [Butano](https://github.com/GValiente/butano/tree/master) C++ GBA project. When anything about the engine API is unclear, **always** consult the [Butano documentation](https://gvaliente.github.io/butano/annotated.html) or the GitHub source before guessing. Butano uses fixed-point math (`bn::fixed`), its own smart pointers, and a specific asset pipeline — don't assume standard library equivalents exist.
+The shared engine code (collision system, sprite system, later scene manager) lives in `../../core/` — headers in `./include/`, sources in `./src/`, API write-ups in `./documentation/`:
+- `CollisionSystem.md` — StaticBody, CollisionShape, PhysicsBody, CollisionRegistry
+- `Sprites.md` — Sprite wrapper, SpriteRegistry, Camera
 
-## Folder Structure
+**Naming conventions:**
+- `MASK_*` — 16-bit layer bitmasks (e.g. `MASK_ENEMY`, `MASK_TILEMAP`)
+- `TYPE_*` — 8-bit `body_type` IDs, used to safely `static_cast` in `on_enter` / `on_exit` (e.g. `TYPE_ENEMY = 3`)
 
-```
-general_collision_detection/
-  graphics/        .bmp + .json files (Butano asset pipeline input)
-  graphics_files/  source Aseprite (.aseprite/.ase) + Tiled (.tmx/.tsx) files
-  include/         header files (.h)
-  src/             source files (.cpp) + main.cpp
-```
+# Tilemap
 
-## Tilemap Pipeline
+Tilemap collision data lives in `include/tilemap_data.h` as a constexpr array of `MapRect`s. Tilemap layer = `0x8000` (bit 15), exposed as `MASK_TILEMAP`.
 
-Tilemap collision data lives in `include/tilemap_data.h`. It is **generated** by `graphics_files/tilemap_8_8/convertcpp.py` from a Tiled `.tmx` file. The script merges solid tiles into axis-aligned rectangles (`MapRect`) and writes them as a constexpr array. Each `MapRect` has `x_min, y_min, x_max, y_max` (pixel coords) and a `layers` bitmask.
+# Collision System
 
-- Tilemap layer = `0x8000` (bit 15)
-- `MapRect` is defined in `collision_registry.h`
-- `DEFAULT_LAYERS` in `convertcpp.py` controls the layer value during generation
+## Layer Bitmasks (16-bit)
 
-## Collision System
+Three fields drive everything: `layers` ("what I am", on `StaticBody`), `mask` ("what I detect", on `CollisionShape`), `block` ("what stops me", on `PhysicsBody`).
 
-### Layer Bitmasks (16-bit)
+## Important Classes
 
-| Field    | Lives in      | Purpose                                      |
-|----------|---------------|----------------------------------------------|
-| `layers` | `StaticBody`  | "What am I" — identifies this body            |
-| `mask`   | `PhysicsBody` | "What I detect" — triggers `on_enter`/`on_exit` |
-| `block`  | `PhysicsBody` | "What blocks me" — stops movement             |
+All three auto-register with `CollisionRegistry` on construction, auto-unregister on destruction — never call register manually.
 
-Collision check: `(my_block & other.layers) != 0` means blocked. `(my_mask & other.layers) != 0` means overlap detected.
+- **`StaticBody`** — discoverable only. Has `layers`. Use for walls, pickups, triggers.
+- **`CollisionShape`** — detects overlaps via `mask`, fires `on_enter()` / `on_exit()`. Use for hitboxes, sensors, pickup range.
+- **`PhysicsBody`** — moves via `move()` / velocity, blocks via `block`. Override `update()` for per-frame logic. Use for player, enemies, projectiles.
 
-### StaticBody
+## Unified Interface
 
-Non-moving collision shape. Only has `layers`. Auto-registers with `CollisionRegistry` on construction, auto-unregisters on destruction. Optionally attach a `Sprite*` for visuals.
+`pos`, `enable()`, `disable()`, `is_enabled()` work identically across `Sprite`, `StaticBody`, `CollisionShape`, `PhysicsBody`.
 
-```cpp
-// A door trigger — player detects it via mask, passes through it (not in player's block)
-StaticBody door(door_x, door_y, 16, 25, Player::DOOR_LAYER);
-door.sprite = &door_sprite;
-```
+**Gotchas:**
+- `CollisionShape` prefixes these as `shape_pos`, `shape_enable`, ... — `PhysicsBody` inherits from both and the unprefixed names would collide.
+- `body.pos.move(x, y)` teleports; `body.move(x, y)` resolves collisions.
+- Disabling a `CollisionShape` fires `on_exit()` for everything it was overlapping; enabling fires `on_enter()` for everything it currently overlaps.
 
-### PhysicsBody
+## body_type Casting
 
-Extends `StaticBody` with velocity, movement, and collision resolution. Override `update()` for per-frame logic (input, AI, gravity). Override `on_enter()`/`on_exit()` for overlap callbacks. Movement resolves X and Y independently (enables wall-sliding).
+Safe downcast in `on_enter()` / `on_exit()`: cheap layer check → null check (map rects pass `nullptr`) → `body_type` match → cast.
 
 ```cpp
-class Player : public PhysicsBody {
-    static constexpr uint16_t LAYERS = 0x0001;
-    static constexpr uint16_t MASK   = ENEMY_LAYER | DOOR_LAYER;
-    static constexpr uint16_t BLOCK  = 0xFFFF & ~ENEMY_LAYER & ~DOOR_LAYER;
-
-    Player(bn::fixed x, bn::fixed y, bn::fixed w, bn::fixed h)
-        : PhysicsBody(x, y, w, h, LAYERS, MASK, BLOCK) {}
-
-    void update() override { /* input, gravity, etc. */ }
-    void on_enter(StaticBody& other) override { /* react to overlaps */ }
-};
+void on_enter(uint16_t hit_layers, StaticBody* body) override {
+    if ((hit_layers & MASK_ENEMY) && body && body->body_type == TYPE_ENEMY) {
+        static_cast<Enemy&>(*body).hit(damage);
+    }
+}
 ```
 
-**Key functions:**
+## Probes
 
-- `move(dx, dy)` — positional move with collision resolution
-- `set_velocity()`, `inc_velocity()`, `dec_velocity()`, `apply_impulse()` — velocity control
-- `probe_bottom(mask)`, `probe_top(mask)`, `probe_left(mask)`, `probe_right(mask)` — returns a `CollisionResult` for a 1px region outside that edge. Pass a mask to filter at query time (defaults to `0xFFFF` = detect everything). Use `.any()` for a bool, `.combined_layers()` if you need to distinguish layers.
+`probe_bottom()`, `probe_top()`, `probe_left()`, `probe_right()` (on `PhysicsBody`) return a `CollisionResult` for a region 1px outside the given edge. Use `combined_layers()` to AND against a mask.
 
 ```cpp
-bool grounded = probe_bottom(MASK_TILEMAP).any();
+bool grounded = probe_bottom().combined_layers() & MASK_TILEMAP;
 ```
 
-### CollisionRegistry
+See `CollisionSystem.md` and `CollisionRegistry::check_rect` for the underlying query.
 
-Singleton. All `StaticBody`/`PhysicsBody` instances auto-register. `update_all()` calls `physics_update()` on every body with `needs_physics_update == true` (i.e., all `PhysicsBody` instances).
+## move_attachments()
 
-## Sprite System
+Override on `PhysicsBody` to move dependent sprites, shapes, or weapons that should track this body. Runs *after* `move_velocity()` (not before) — that's why it's its own hook. Align attachment origins via `Position.offset_x/y` so you can just forward `move(dx, dy)` without per-attachment math.
 
-### Sprite
+## Registry
 
-Wraps a `bn::sprite_ptr` with world-space coordinates. Auto-registers with `SpriteRegistry` on construction. `sync()` converts world position to screen position via the Camera.
+Singleton. `StaticBody`, `CollisionShape`, `PhysicsBody`, and `MapRect` all auto-register on construction; `update_all()` runs every frame and drives collision callbacks. See docs for `check_rect()` / `check_point()` one-shot queries.
 
-```cpp
-Sprite frog_sprite(bn::sprite_items::frog.create_sprite(0, 0), world_x, world_y);
-// automatically registered — no manual register call needed
-```
+**Caps:** 64 static bodies · 16 physics bodies · 32 collision shapes · 32 map rects · 8 hits per `CollisionResult` (so a `CollisionShape` sees at most 8 overlaps at once).
 
-Bodies reference sprites via a raw `Sprite*` pointer + optional offset:
-```cpp
-player.sprite = &frog_sprite;
-player.sprite_offset_y = -7;  // visual sits 7px above collision center
-```
+# Sprite System
 
-`AnimatedSprite` is planned as a subclass of `Sprite` but **not yet implemented**.
+Butano sprites are **screen-space**; game logic (movement, collision, AI) stays in **world-space**. The `Sprite` wrapper holds a world-space position; `SpriteRegistry::sync_all(camera)` converts world → screen each frame.
 
-### SpriteRegistry
+## Sprite
 
-Singleton. `sync_all(camera)` updates all registered sprites' screen positions each frame.
+Wraps a `bn::sprite_ptr` with a world-space `pos`. Auto-registers with `SpriteRegistry` on construction. Bodies reference a sprite via raw `Sprite*` + optional `sprite_offset_x/y` for visual-vs-hitbox alignment.
+
+## SpriteRegistry
+
+Singleton. `sync_all(camera)` pushes every registered sprite's screen position each frame. Cap: 64 sprites.
 
 ## Camera
 
-Singleton. Follows a world-space target, clamped to map bounds (GBA screen: 240x160).
+Singleton. `follow(x, y)` tracks a world-space target, clamped to the map bounds passed into `init(world_w, world_h)`. Exposes `to_screen_x/y` for sprites and `bg_x/y` for background scrolling.
 
-```cpp
-Camera::instance().init(map_width * 8, map_height * 8);
-Camera::instance().follow(player.x, player.y);
-// use to_screen_x/y for world→screen, bg_x/y for background offset
-```
+## Canvas Layer (UI)
 
-## Main Loop Pattern
-
-```cpp
-while(true) {
-    CollisionRegistry::instance().update_all();          // physics + collisions
-    Camera::instance().follow(player.x, player.y);       // camera tracks player
-    bg.set_position(Camera::instance().bg_x(), bg_y());  // scroll background
-    SpriteRegistry::instance().sync_all(camera);         // world→screen sprites
-    bn::core::update();                                  // flush to hardware
-}
-```
+Screen-locked overlays — health bars, menus, score — skip the wrapper entirely. Use the Butano sprite API directly; no registry, no camera, no world coordinates.
