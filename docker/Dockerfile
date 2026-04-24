@@ -43,12 +43,15 @@ RUN ln -sf /proc/self/mounts /etc/mtab && \
 # xvfb provides virtual framebuffer for headless GUI testing
 # pulseaudio provides null audio sink for headless audio
 RUN apt-get update && \
-    apt-get install -y xvfb pulseaudio sudo && \
-    wget -O /tmp/mgba.tar.xz https://github.com/mgba-emu/mgba/releases/download/0.10.5/mGBA-0.10.5-ubuntu64-noble.tar.xz && \
-    mkdir /tmp/mgba && \
-    tar -xf /tmp/mgba.tar.xz -C /tmp/mgba && \
-    apt-get install -y /tmp/mgba/*/*.deb && \
-    rm -rf /var/lib/apt/lists/* /tmp/mgba /tmp/mgba.tar.xz
+    apt-get install -y xvfb pulseaudio sudo \
+    libsdl2-dev zlib1g-dev libpng-dev \
+    libepoxy-dev cmake git g++ \
+    qtbase5-dev qtmultimedia5-dev libqt5opengl5-dev && \
+    git clone --depth 1 --branch 0.10.5 https://github.com/mgba-emu/mgba.git /tmp/mgba && \
+    cmake -S /tmp/mgba -B /tmp/mgba/build -DUSE_LIBZIP=OFF && \
+    cmake --build /tmp/mgba/build -j$(nproc) && \
+    cmake --install /tmp/mgba/build && \
+    rm -rf /tmp/mgba /var/lib/apt/lists/*
 
 # Grant passwordless sudo to the default ubuntu user
 RUN echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ubuntu && \

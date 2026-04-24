@@ -5,8 +5,13 @@ doku
 .gn
 .sav
 .devcontainer/devcontainer.json
+build/
+
 .DS_Store
 **/.DS_Store
 .claude/
 **/.claude/
-build/
+
+*.elf
+*.gba
+*.sav
