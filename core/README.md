@@ -1,50 +1,21 @@
-# 🧩 Core Scene System
+# 📂 CORE SYSTEMS
 
-This module provides the global infrastructure for state management. It acts as the "Engine Room" of the game, ensuring that switching between menus and gameplay is memory-safe and efficient for the GBA.
+This folder contains the foundational systems for the project. These modules are shared by both the **RPG** and **Platformer** teams to ensure hardware efficiency and consistent resource management.
 
----
+### 📖 Documentation Reference
+Refer to the following guides in the `/documentation` folder for implementation details:
 
-## 🚀 Key Features
-
-* **Automatic Memory Management (RAII):** Uses `bn::unique_ptr` to ensure that when a scene is destroyed, all its associated resources (Sprites, Backgrounds, Palettes) are automatically cleared from VRAM.
-* **Singleton Manager:** A central `SceneManager` to orchestrate the game flow.
-* **Zero Dependencies:** This module is completely neutral. It doesn't know about RPGs or Platformers, making it the perfect foundation for multi-genre projects.
-
----
-
-## 🏗️ Architecture
-
-The `SceneManager` follows the **State Pattern**. It manages the lifecycle of `core::Scene` objects without needing to know their internal logic.
-
-
-
-1.  **Current Scene:** The active game state being updated every frame.
-2.  **Next Scene:** A buffer that holds the upcoming scene. When set, the manager destroys the current scene first (releasing memory) before initializing the new one.
+* **[CollisionSystem.md](./documentation/CollisionSystem.md)**: Logic for collision detection.
+* **[SceneSystem.md](./documentation/SceneSystem.md)**: Framework for managing game states and transitions.
+* **[Sprites.md](./documentation/Sprites.md)**: Wrappers for sprite allocation.
+* **[Tilemap.md](./documentation/Tilemap.md)**: Management of map data.
 
 ---
 
-## 💻 Usage
+### 🛠️ Key Implementation Rules
 
-### 1. Create a Scene
-Every game state must inherit from `core::Scene`.
+1.  **RAII Compliance**: All hardware resources (VRAM, Palettes) must be managed through objects. Do not use raw pointers for engine assets.
+2.  **Coordination**: Changes made to this folder affect both teams. Consult the lead dev before modifying core logic.
 
-```cpp
-#include "core_scene.h"
-
-class MainMenu : public core::Scene {
-public:
-    void update() override {
-        // Handle menu logic here
-    }
-};
-```
-
-### 2. Trigger a Transition
-Use the SceneManager from anywhere in your code to switch states.
-
-```cpp
-#include "core_scene_manager.h"
-
-// The old scene will be deleted automatically!
-core::SceneManager::instance().set_next_scene(bn::make_unique<MainMenu>());
-```
+---
+> **Note:** Proper use of these systems is mandatory to prevent VRAM overflows and memory leaks on the GBA hardware.
