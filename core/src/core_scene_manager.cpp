@@ -15,7 +15,7 @@ namespace core {
 
     void SceneManager::update() {
         if(_next_scene) {
-            bn::blending::set_fade_color(bn::colors::black);
+            bn::blending::set_black_fade_color();
             bn::blending::set_fade_alpha(1.0);
 
             // WECHSEL: RAII löscht die alte Szene (Testament wird geschrieben)
