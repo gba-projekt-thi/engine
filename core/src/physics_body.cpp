@@ -1,16 +1,19 @@
 #include "physics_body.h"
 #include "sprite.h"
 #include "collision_registry.h"
+#include "bn_math.h"
 
 // =============================================================================
 // Construction
 // =============================================================================
 
 PhysicsBody::PhysicsBody(bn::fixed x, bn::fixed y, bn::fixed w, bn::fixed h,
-                         uint16_t layers, uint16_t mask, uint16_t block)
+                         uint16_t layers, uint16_t mask, uint16_t block,
+                         bn::fixed vel_max)
     : StaticBody(x, y, w, h, layers),
       CollisionShape(x, y, w, h, mask),
-      block(block) {
+      block(block),
+      vel_max(vel_max) {
     body_type = 1;
     _skip_body = static_cast<StaticBody*>(this);
     CollisionRegistry::instance().register_physics_body(this);
@@ -25,11 +28,15 @@ PhysicsBody::~PhysicsBody() {
 // =============================================================================
 
 void PhysicsBody::move_velocity() {
-    // clamp velocity
-    if(vel_x >  vel_max) vel_x =  vel_max;
-    if(vel_x < -vel_max) vel_x = -vel_max;
-    if(vel_y >  vel_max) vel_y =  vel_max;
-    if(vel_y < -vel_max) vel_y = -vel_max;
+    // clamp velocity by magnitude (uniform top speed in every direction)
+    bn::fixed speed_sq = vel_x * vel_x + vel_y * vel_y;
+    bn::fixed max_sq   = vel_max * vel_max;
+
+    if(speed_sq > max_sq) {
+        bn::fixed speed = bn::fixed(bn::sqrt(speed_sq));
+        vel_x = vel_x * vel_max / speed;
+        vel_y = vel_y * vel_max / speed;
+    }
 
     move(vel_x, vel_y);
 }
