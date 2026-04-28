@@ -31,6 +31,8 @@ struct CollisionResult {
     CollisionHit hits[MAX_HITS] = {};
     int count = 0;
 
+    bool any() const { return count > 0; }
+
     uint16_t combined_layers() const {
         uint16_t result = 0;
         for(int i = 0; i < count; ++i) result |= hits[i].layers;

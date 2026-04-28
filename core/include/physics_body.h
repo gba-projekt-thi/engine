@@ -26,10 +26,10 @@ public:
     virtual void move_attachments(bn::fixed /*x*/, bn::fixed /*y*/) {}
 
     // probe 1px outside the blocking rect (StaticBody), returns CollisionResult
-    CollisionResult probe_bottom();
-    CollisionResult probe_top();
-    CollisionResult probe_left();
-    CollisionResult probe_right();
+    CollisionResult probe_bottom(uint16_t mask = 0xFFFF);
+    CollisionResult probe_top(uint16_t mask = 0xFFFF);
+    CollisionResult probe_left(uint16_t mask = 0xFFFF);
+    CollisionResult probe_right(uint16_t mask = 0xFFFF);
 
     PhysicsBody(bn::fixed x, bn::fixed y, bn::fixed w, bn::fixed h,
                 uint16_t layers, uint16_t mask, uint16_t block);

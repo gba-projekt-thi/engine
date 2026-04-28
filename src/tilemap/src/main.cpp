@@ -12,7 +12,7 @@
 int main() {
     bn::core::init();
 
-    bn::regular_bg_map_item map_item(map_cells[0], bn::size(64, 64));
+    bn::regular_bg_map_item map_item(map_cells[0], bn::size(map_width, map_height));
     bn::regular_bg_item bg_item(
         bn::regular_bg_tiles_items::simple_tileset,
         bn::bg_palette_items::palette,
