@@ -1,28 +1,28 @@
 # Scene Manager Integration Test
 
-Dieses Projekt testet den `core::SceneManager` aus dem Engine-Core gemäß [Issue #4](https://github.com/palle34/gba-engine/issues/4).
+This project tests the `core::SceneManager` from the engine core as described in [Issue #29](https://github.com/gba-projekt-thi/engine/issues/29).
 
-## Ziel
+## Goal
 
-Verifizierung, dass das **RAII-Muster** korrekt funktioniert:  
-Beim Wechsel einer Szene müssen alle zugehörigen Objekte (Sprites, eingebettete Spielobjekte wie `Player`) physisch aus dem Speicher entfernt werden, **bevor** die neue Szene initialisiert wird.
+Verify that the **RAII pattern** works correctly:  
+When switching scenes, all associated objects (sprites, embedded game objects like `Player`) must be physically removed from memory **before** the new scene is initialized.
 
 ---
 
-## Szenen
+## Scenes
 
-| Szene | Beschreibung |
+| Scene | Description |
 |---|---|
-| `TitleScene` | Startszene. Zeigt einen Titelbildschirm. START wechselt zur `LevelScene`. |
-| `LevelScene` | Spielszene. Besitzt ein `Player`-Objekt (RAII-Nachweis). START wechselt zurück zur `TitleScene`. |
+| `TitleScene` | Start scene. Displays a title screen. START switches to `LevelScene`. |
+| `LevelScene` | Game scene. Owns a `Player` object (RAII proof). START switches back to `TitleScene`. |
 
-`Player` ist ein reines Testobjekt innerhalb der `LevelScene`, das nur `BN_LOG`-Ausgaben in seinem Konstruktor und Destruktor produziert.
+`Player` is a pure test object within `LevelScene` that only produces `BN_LOG` output in its constructor and destructor.
 
 ---
 
-## Aufbau von `main.cpp`
+## Structure of `main.cpp`
 
-`main()` ist bewusst minimal gehalten – nur der SceneManager-Lifecycle läuft hier:
+`main()` is intentionally minimal — only the SceneManager lifecycle runs here:
 
 ```cpp
 int main()
@@ -42,23 +42,23 @@ int main()
 
 ---
 
-## Verifikation in mGBA
+## Verification in mGBA
 
-1. ROM bauen (siehe unten) und in **mGBA** laden.
-2. **Tools → Message Log** öffnen.
-3. **START** drücken, um zwischen den Szenen zu wechseln.
+1. Build the ROM (see below) and load it in **mGBA**.
+2. Open **Tools → Message Log**.
+3. Press **START** to switch between scenes.
 
-### Erwartete Log-Ausgabe (TitleScene → LevelScene)
+### Expected Log Output (TitleScene → LevelScene)
 
 ```
 CONSTRUCTOR: TitleScene initialized.
---- START gedrückt ---
+--- START pressed ---
 CONSTRUCTOR: Player created.
 CONSTRUCTOR: LevelScene initialized.
 DESTRUCTOR:  TitleScene deleted.
 ```
 
-### Erwartete Log-Ausgabe (LevelScene → TitleScene)
+### Expected Log Output (LevelScene → TitleScene)
 
 ```
 CONSTRUCTOR: TitleScene initialized.
@@ -66,17 +66,17 @@ DESTRUCTOR:  Player removed from memory.
 DESTRUCTOR:  LevelScene deleted.
 ```
 
-> **Wichtig:** Die `DESTRUCTOR`-Logs der alten Szene müssen **nach** dem `CONSTRUCTOR`-Log der neuen Szene erscheinen.  
-> Das ist das erwartete Verhalten des `SceneManager` (`set_next_scene` konstruiert zuerst, `update()` löscht dann die alte Szene via RAII).
+> **Important:** The `DESTRUCTOR` logs of the old scene must appear **after** the `CONSTRUCTOR` log of the new scene.  
+> This is the expected behavior of the `SceneManager` (`set_next_scene` constructs first, then `update()` deletes the old scene via RAII).
 
 ---
 
-## Akzeptanzkriterien (aus Issue #4)
+## Acceptance Criteria (from Issue #4)
 
-- [x] `main.cpp` beschränkt sich auf die Initialisierung des SceneManagers
-- [x] Wechsel von `TitleScene` → `LevelScene` und zurück funktioniert ohne Absturz
-- [x] Das mGBA-Log bestätigt die Zerstörung der alten Szene und ihres `Player`-Objekts
-- [ ] VRAM-Viewer in mGBA zeigt, dass alte Tiles verschwinden und durch neue ersetzt werden (kein „Tile-Stacking")
+- [x] `main.cpp` is limited to SceneManager initialization
+- [x] Switching from `TitleScene` → `LevelScene` and back works without crashing
+- [x] The mGBA log confirms the destruction of the old scene and its `Player` object
+- [ ] VRAM viewer in mGBA shows that old tiles disappear and are replaced by new ones (no "tile stacking")
 
 ---
 
@@ -87,5 +87,5 @@ cd src/scene_manager_test
 make
 ```
 
-> Voraussetzung: Butano-Devcontainer mit `DEVKITARM` und `WONDERFUL_TOOLCHAIN`.  
-> Siehe das [Haupt-README](../../README.md) für Setup-Anweisungen.
+> Prerequisite: Butano dev container with `DEVKITARM` and `WONDERFUL_TOOLCHAIN`.  
+> See the [main README](../../README.md) for setup instructions.
