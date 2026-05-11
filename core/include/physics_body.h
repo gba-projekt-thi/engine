@@ -32,7 +32,8 @@ public:
     CollisionResult probe_right(uint16_t mask = 0xFFFF);
 
     PhysicsBody(bn::fixed x, bn::fixed y, bn::fixed w, bn::fixed h,
-                uint16_t layers, uint16_t mask, uint16_t block);
+                uint16_t layers, uint16_t mask, uint16_t block,
+                bn::fixed vel_max = 5);
     virtual ~PhysicsBody();
 
 private:
