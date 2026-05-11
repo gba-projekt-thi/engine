@@ -7,6 +7,8 @@
 #include "bn_sprite_text_generator.h"
 #include "bn_bg_palettes.h"
 #include "bn_color.h"
+#include "bn_blending.h"
+#include "bn_colors.h"
 
 #include "core_scene.h"
 #include "core_scene_manager.h"
@@ -23,7 +25,7 @@ class LevelScene;
 class Player
 {
 public:
-    Player()  { BN_LOG("CONSTRUCTOR: Player created."); }
+    Player() { BN_LOG("CONSTRUCTOR: Player created."); }
     ~Player() { BN_LOG("DESTRUCTOR:  Player removed from memory."); }
 };
 
@@ -31,33 +33,44 @@ public:
 class TitleScene : public core::Scene
 {
 public:
-    explicit TitleScene(bn::sprite_text_generator& gen);
+    explicit TitleScene(bn::sprite_text_generator &gen);
     ~TitleScene() override;
+
+    void init() override;
     void update() override;
 
 private:
-    bn::sprite_text_generator&       _gen;
-    bn::vector<bn::sprite_ptr, 64>   _sprites;
+    bn::sprite_text_generator &_gen;
+    bn::vector<bn::sprite_ptr, 64> _sprites;
 };
 
 // ─── LevelScene ───────────────────────────────────────────────────────────────
 class LevelScene : public core::Scene
 {
 public:
-    explicit LevelScene(bn::sprite_text_generator& gen);
+    explicit LevelScene(bn::sprite_text_generator &gen);
     ~LevelScene() override;
+
+    void init() override;
     void update() override;
 
 private:
-    bn::sprite_text_generator&       _gen;
-    Player                           _player;   // nested RAII object
-    bn::vector<bn::sprite_ptr, 64>   _sprites;
+    bn::sprite_text_generator &_gen;
+    Player _player; // nested RAII object
+    bn::vector<bn::sprite_ptr, 64> _sprites;
 };
 
 // ─── TitleScene implementation ────────────────────────────────────────────────
 TitleScene::TitleScene(bn::sprite_text_generator& gen) : _gen(gen)
 {
-    BN_LOG("CONSTRUCTOR: TitleScene initialized.");
+    // Der Konstruktor ist jetzt fast leer. Nur Loggen, keine Sprites!
+    BN_LOG("CONSTRUCTOR: TitleScene (Lightweight)");
+}
+
+void TitleScene::init() 
+{
+    // Erst JETZT, wenn der SceneManager es sagt, werden die Sprites erstellt.
+    BN_LOG("INIT: TitleScene - Creating Sprites now.");
     _gen.generate(4 - 120, -20, "=== TITLE SCENE ===", _sprites);
     _gen.generate(4 - 120,   0, "START -> LevelScene", _sprites);
 }
@@ -69,7 +82,7 @@ TitleScene::~TitleScene()
 
 void TitleScene::update()
 {
-    if(bn::keypad::start_pressed())
+    if (bn::keypad::start_pressed())
     {
         core::SceneManager::instance().set_next_scene(
             bn::make_unique<LevelScene>(_gen));
@@ -79,7 +92,12 @@ void TitleScene::update()
 // ─── LevelScene implementation ────────────────────────────────────────────────
 LevelScene::LevelScene(bn::sprite_text_generator& gen) : _gen(gen)
 {
-    BN_LOG("CONSTRUCTOR: LevelScene initialized.");
+    BN_LOG("CONSTRUCTOR: LevelScene (Lightweight)");
+}
+
+void LevelScene::init() 
+{
+    BN_LOG("INIT: LevelScene - Creating Sprites now.");
     _gen.generate(4 - 120, -20, "=== LEVEL SCENE ===", _sprites);
     _gen.generate(4 - 120,   0, "START -> TitleScene", _sprites);
 }
@@ -91,7 +109,7 @@ LevelScene::~LevelScene()
 
 void LevelScene::update()
 {
-    if(bn::keypad::start_pressed())
+    if (bn::keypad::start_pressed())
     {
         core::SceneManager::instance().set_next_scene(
             bn::make_unique<TitleScene>(_gen));
@@ -104,15 +122,23 @@ void LevelScene::update()
 int main()
 {
     bn::core::init();
+
+    // 2. Blending-Konfiguration (Einmalig für das gesamte Spiel)
+    bn::blending::set_fade_color(bn::blending::fade_color_type::BLACK);
+    bn::blending::set_fade_alpha(0); // Startet voll sichtbar
+
     bn::sprite_text_generator gen(common::variable_8x16_sprite_font);
+
+    gen.set_blending_enabled(true);
+
     bn::bg_palettes::set_transparent_color(bn::color(0, 0, 0));
 
+    // Die erste Szene wird gesetzt (der SceneManager startet den Prozess)
     core::SceneManager::instance().set_next_scene(bn::make_unique<TitleScene>(gen));
 
-    while(true)
+    while (true)
     {
         core::SceneManager::instance().update();
         bn::core::update();
     }
 }
-
