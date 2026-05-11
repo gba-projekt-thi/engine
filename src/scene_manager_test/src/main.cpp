@@ -63,13 +63,13 @@ private:
 // ─── TitleScene implementation ────────────────────────────────────────────────
 TitleScene::TitleScene(bn::sprite_text_generator& gen) : _gen(gen)
 {
-    // Der Konstruktor ist jetzt fast leer. Nur Loggen, keine Sprites!
+    // The constructor is now almost empty. Only logging, no sprites!
     BN_LOG("CONSTRUCTOR: TitleScene (Lightweight)");
 }
 
 void TitleScene::init() 
 {
-    // Erst JETZT, wenn der SceneManager es sagt, werden die Sprites erstellt.
+    // Only NOW, when the SceneManager says so, are the sprites created.
     BN_LOG("INIT: TitleScene - Creating Sprites now.");
     _gen.generate(4 - 120, -20, "=== TITLE SCENE ===", _sprites);
     _gen.generate(4 - 120,   0, "START -> LevelScene", _sprites);
@@ -123,9 +123,9 @@ int main()
 {
     bn::core::init();
 
-    // 2. Blending-Konfiguration (Einmalig für das gesamte Spiel)
+    // 2. Blending configuration (once for the entire game)
     bn::blending::set_fade_color(bn::blending::fade_color_type::BLACK);
-    bn::blending::set_fade_alpha(0); // Startet voll sichtbar
+    bn::blending::set_fade_alpha(0); // Starts fully visible
 
     bn::sprite_text_generator gen(common::variable_8x16_sprite_font);
 
@@ -133,7 +133,7 @@ int main()
 
     bn::bg_palettes::set_transparent_color(bn::color(0, 0, 0));
 
-    // Die erste Szene wird gesetzt (der SceneManager startet den Prozess)
+    // The first scene is set (the SceneManager starts the process)
     core::SceneManager::instance().set_next_scene(bn::make_unique<TitleScene>(gen));
 
     while (true)

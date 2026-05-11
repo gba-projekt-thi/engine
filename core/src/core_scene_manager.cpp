@@ -12,9 +12,9 @@ namespace core {
     void SceneManager::set_next_scene(bn::unique_ptr<Scene> next_scene)
     {
         if (!_next_scene)
-        { // Nur wenn nicht gerade schon ein Wechsel läuft
+        { // Only if a transition is not already in progress
             _next_scene = bn::move(next_scene);
-            // Wir setzen NICHT _current_scene um, sondern überlassen das der update() Methode!
+            // We do NOT switch _current_scene here; update() handles that.
         }
     }
 
@@ -30,10 +30,10 @@ void SceneManager::update() {
 
         case State::FADE_OUT:
             _fade_counter++;
-            // Berechnung des Alpha-Werts:
+            // Calculate alpha value:
             bn::blending::set_fade_alpha(bn::fixed(_fade_counter) / FADE_FRAMES);
             
-            // Die alte Szene darf noch ein letztes Mal updaten (Animationen laufen weiter)
+            // The old scene is allowed to update one last time (animations keep running)
             if(_current_scene) _current_scene->update();
 
             if(_fade_counter >= FADE_FRAMES) {
@@ -42,12 +42,12 @@ void SceneManager::update() {
             break;
 
         case State::SWAPPING:
-            // --- DER KRITISCHE MOMENT (RAII + INIT) ---
-            _current_scene.reset();                 // 1. VRAM leeren
-            _current_scene = bn::move(_next_scene); // 2. Besitz übernehmen
+            // --- THE CRITICAL MOMENT (RAII + INIT) ---
+            _current_scene.reset();                 // 1. clear VRAM
+            _current_scene = bn::move(_next_scene); // 2. take ownership
             
             if(_current_scene) {
-                _current_scene->init();             // 3. Neue Assets laden
+                _current_scene->init();             // 3. load new assets
             }
             
             _state = State::FADE_IN;
@@ -57,12 +57,12 @@ void SceneManager::update() {
             _fade_counter--;
             bn::blending::set_fade_alpha(bn::fixed(_fade_counter) / FADE_FRAMES);
             
-            // Die neue Szene läuft bereits im Hintergrund des Fades!
+            // The new scene is already running behind the fade!
             if(_current_scene) _current_scene->update();
 
             if(_fade_counter <= 0) {
                 _state = State::IDLE;
-                bn::blending::set_fade_alpha(0); // Sicherstellen, dass alles sichtbar ist
+                bn::blending::set_fade_alpha(0); // Ensure everything is fully visible
             }
             break;
 

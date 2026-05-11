@@ -49,6 +49,43 @@ Use the SceneManager from anywhere in your code to switch states.
 core::SceneManager::instance().set_next_scene(bn::make_unique<MainMenu>());
 ```
 
+---
+
+## ⚠️ Constructor vs. `init()`
+This rule is critical for the SceneManager.
+
+- The **constructor** should only initialize simple data: primitive members, IDs, and state variables.
+- Anything that uses **VRAM** (Sprites, Backgrounds, Palettes, Audio, Maps, Animations) should be created in `init()`.
+
+Why? The SceneManager clears the old scene's VRAM before calling `init()` on the new scene.
+If the new scene loads graphics in its constructor, the transition can still cause VRAM conflicts or visible flicker.
+
+```cpp
+class MyScene : public core::Scene {
+public:
+    MyScene() {
+        _score = 0; // OK
+    }
+
+    void init() override {
+        _player_sprite = bn::sprite_items::player.create_sprite(0, 0);
+        _bg = bn::regular_bg_items::level.create_bg(0, 0);
+    }
+};
+```
+
+## 🎨 The Blending Rule
+To make the fade effect blend smoothly across all graphics, blending must be enabled on every graphical object.
+
+Every created sprite or background needs:
+
+```cpp
+sprite.set_blending_enabled(true);
+bg.set_blending_enabled(true);
+```
+
+Without this, the level may remain visible during fade-out and then suddenly disappear when the scene is destroyed. Only with blending enabled does the whole image fade correctly to black.
+
 # 💾 Persistence Pattern: Handling Data across Scenes
 
 Since our `core::SceneManager` uses **RAII**, every scene is completely destroyed during a transition to save VRAM and RAM. To keep data like HP or Progress alive, we use a **Global Singleton Pattern**.
