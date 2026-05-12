@@ -23,50 +23,40 @@ void SceneManager::update() {
         case State::IDLE:
             if(_next_scene) {
                 _state = State::FADE_OUT;
-                _fade_counter = 0;
+                _fade_counter = 1; // Start directly at 1
+                bn::blending::set_fade_alpha(bn::fixed(_fade_counter) / FADE_FRAMES);
             }
             if(_current_scene) _current_scene->update();
             break;
 
         case State::FADE_OUT:
-            _fade_counter++;
-            // Calculate alpha value:
-            bn::blending::set_fade_alpha(bn::fixed(_fade_counter) / FADE_FRAMES);
-            
-            // The old scene is allowed to update one last time (animations keep running)
             if(_current_scene) _current_scene->update();
+            
+            // Increment first, then check
+            _fade_counter++;
+            bn::blending::set_fade_alpha(bn::fixed(_fade_counter) / FADE_FRAMES);
 
             if(_fade_counter >= FADE_FRAMES) {
-                _state = State::SWAPPING;
+                // OPTIMIZATION: Do the swap directly here!
+                _current_scene.reset();
+                _current_scene = bn::move(_next_scene);
+                if(_current_scene) _current_scene->init();
+                
+                _state = State::FADE_IN;
+                // The counter stays at MAX, so FADE_IN starts at MAX-1 in the next frame
             }
-            break;
-
-        case State::SWAPPING:
-            // --- THE CRITICAL MOMENT (RAII + INIT) ---
-            _current_scene.reset();                 // 1. clear VRAM
-            _current_scene = bn::move(_next_scene); // 2. take ownership
-            
-            if(_current_scene) {
-                _current_scene->init();             // 3. load new assets
-            }
-            
-            _state = State::FADE_IN;
             break;
 
         case State::FADE_IN:
             _fade_counter--;
             bn::blending::set_fade_alpha(bn::fixed(_fade_counter) / FADE_FRAMES);
             
-            // The new scene is already running behind the fade!
             if(_current_scene) _current_scene->update();
 
             if(_fade_counter <= 0) {
                 _state = State::IDLE;
-                bn::blending::set_fade_alpha(0); // Ensure everything is fully visible
+                bn::blending::set_fade_alpha(0);
             }
-            break;
-
-        default:
             break;
     }
 }
