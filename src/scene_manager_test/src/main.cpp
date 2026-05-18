@@ -9,6 +9,7 @@
 #include "bn_color.h"
 #include "bn_blending.h"
 #include "bn_colors.h"
+#include "bn_music_items.h"
 
 #include "core_scene.h"
 #include "core_scene_manager.h"
@@ -69,6 +70,7 @@ TitleScene::TitleScene(bn::sprite_text_generator& gen) : _gen(gen)
 
 void TitleScene::init() 
 {
+    bn::music_items::game_audio_level1.play();
     // Only NOW, when the SceneManager says so, are the sprites created.
     BN_LOG("INIT: TitleScene - Creating Sprites now.");
     _gen.generate(4 - 120, -20, "=== TITLE SCENE ===", _sprites);
@@ -97,6 +99,7 @@ LevelScene::LevelScene(bn::sprite_text_generator& gen) : _gen(gen)
 
 void LevelScene::init() 
 {
+    bn::music_items::game_audio_level2.play();
     BN_LOG("INIT: LevelScene - Creating Sprites now.");
     _gen.generate(4 - 120, -20, "=== LEVEL SCENE ===", _sprites);
     _gen.generate(4 - 120,   0, "START -> TitleScene", _sprites);

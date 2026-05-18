@@ -31,7 +31,7 @@ struct AudioTransitionOptions {
 
         State _state = State::IDLE;
         int _fade_counter = 0;
-        static constexpr int FADE_FRAMES = 30; // 0.5 seconds at 60 FPS
+        static constexpr int FADE_FRAMES = 60; // 1 second at 60 FPS
 
         SceneManager() = default; // Private constructor for singleton
         bn::unique_ptr<Scene> _current_scene;

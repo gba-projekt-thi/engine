@@ -29,16 +29,31 @@ namespace core
         case State::IDLE:
             if (_next_scene)
             {
-                _state = State::FADE_OUT;
-                _fade_counter = 1; // Start directly at 1
-
-                // AUDIO: If instant stop is requested, stop music immediately
-                if (_audio_opts.stop_music_instantly)
+                if (!_current_scene)
                 {
-                    bn::music::stop();
-                }
+                    _current_scene = bn::move(_next_scene);
+                    if (_current_scene)
+                        _current_scene->init();
 
-                bn::blending::set_fade_alpha(bn::fixed(_fade_counter) / FADE_FRAMES);
+                    if (_audio_opts.fade_music && !_audio_opts.stop_music_instantly)
+                    {
+                        bn::music::set_volume(0.0);
+                    }
+
+                    _state = State::FADE_IN;
+                    _fade_counter = FADE_FRAMES;
+                }
+                else
+                {
+                    // Normaler Szenenwechsel im laufenden Spiel (Ausfaden)
+                    _state = State::FADE_OUT;
+                    _fade_counter = 1;
+                    if (_audio_opts.stop_music_instantly)
+                    {
+                        bn::music::stop();
+                    }
+                    bn::blending::set_fade_alpha(bn::fixed(_fade_counter) / FADE_FRAMES);
+                }
             }
             if (_current_scene)
                 _current_scene->update();
@@ -64,8 +79,14 @@ namespace core
                 // OPTIMIZATION: Do the swap directly here!
                 _current_scene.reset();
                 _current_scene = bn::move(_next_scene);
-                if (_current_scene)
+                if (_current_scene) {
                     _current_scene->init();
+                }
+
+                if (_audio_opts.fade_music && !_audio_opts.stop_music_instantly)
+                {
+                    bn::music::set_volume(0.0);
+                }
 
                 _state = State::FADE_IN;
                 // The counter stays at MAX, so FADE_IN starts at MAX-1 in the next frame
@@ -81,7 +102,7 @@ namespace core
                 // AUDIO: Fade music in linearly
                 if (_audio_opts.fade_music && !_audio_opts.stop_music_instantly)
                 {
-                    bn::music::set_volume(progress);
+                    bn::music::set_volume(1.0 - progress);
                 }
             }
 
