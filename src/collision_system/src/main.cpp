@@ -24,6 +24,7 @@
 #include "sprite_registry.h"
 #include "player.h"
 #include "enemy.h"
+#include "pos_debug.h"
 
 // MASK_* and TYPE_* live in collision_config.h
 
@@ -86,6 +87,11 @@ int main() {
     enemy.laser_left.beam  = &laser_left_sprite;
     enemy.laser_right.beam = &laser_right_sprite;
 
+    // --- Debug overlay ---
+    pos_debug::register_draw_position(player.pos, bn::color(31, 0, 0));    // red
+    pos_debug::register_draw_position(enemy.pos,  bn::color(31, 31, 0));   // yellow
+    pos_debug::register_draw_position(door.pos,   bn::color(0, 31, 0));    // green
+
     // --- Debug text ---
     bn::sprite_text_generator text_gen(common::variable_8x8_sprite_font);
     bn::vector<bn::sprite_ptr, 32> text_sprites;
@@ -103,6 +109,9 @@ int main() {
 
         // 4. all sprites: world → screen
         SpriteRegistry::instance().sync_all(Camera::instance());
+
+        // 4b. debug rect overlay
+        pos_debug::update_all(Camera::instance());
 
         // 5. debug text
         text_sprites.clear();
