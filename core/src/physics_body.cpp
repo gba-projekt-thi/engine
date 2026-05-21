@@ -8,12 +8,12 @@
 // =============================================================================
 
 PhysicsBody::PhysicsBody(bn::fixed x, bn::fixed y, bn::fixed w, bn::fixed h,
-                         uint16_t layers, uint16_t mask, uint16_t block,
-                         bn::fixed vel_max)
-    : StaticBody(x, y, w, h, layers),
-      CollisionShape(x, y, w, h, mask),
-      block(block),
-      vel_max(vel_max) {
+                         uint16_t layers_, uint16_t mask_, uint16_t block_,
+                         bn::fixed vel_max_)
+    : StaticBody(x, y, w, h, layers_),
+      CollisionShape(x, y, w, h, mask_),
+      block(block_),
+      vel_max(vel_max_) {
     body_type = 1;
     _skip_body = static_cast<StaticBody*>(this);
     CollisionRegistry::instance().register_physics_body(this);
@@ -179,26 +179,26 @@ bool PhysicsBody::_collides_with_body(StaticBody& body, bn::fixed nx, bn::fixed 
 // Probes — 1px-thin rect outside the blocking rect (StaticBody)
 // =============================================================================
 
-CollisionResult PhysicsBody::probe_bottom(uint16_t mask) {
+CollisionResult PhysicsBody::probe_bottom(uint16_t mask_) {
     bn::fixed hh = pos.height / 2;
     return CollisionRegistry::check_rect(
-        pos.x, pos.y + hh + 1, pos.width - 2, 1, mask, _skip_body);
+        pos.x, pos.y + hh + 1, pos.width - 2, 1, mask_, _skip_body);
 }
 
-CollisionResult PhysicsBody::probe_top(uint16_t mask) {
+CollisionResult PhysicsBody::probe_top(uint16_t mask_) {
     bn::fixed hh = pos.height / 2;
     return CollisionRegistry::check_rect(
-        pos.x, pos.y - hh - 1, pos.width - 2, 1, mask, _skip_body);
+        pos.x, pos.y - hh - 1, pos.width - 2, 1, mask_, _skip_body);
 }
 
-CollisionResult PhysicsBody::probe_left(uint16_t mask) {
+CollisionResult PhysicsBody::probe_left(uint16_t mask_) {
     bn::fixed hw = pos.width / 2;
     return CollisionRegistry::check_rect(
-        pos.x - hw - 1, pos.y, 1, pos.height - 2, mask, _skip_body);
+        pos.x - hw - 1, pos.y, 1, pos.height - 2, mask_, _skip_body);
 }
 
-CollisionResult PhysicsBody::probe_right(uint16_t mask) {
+CollisionResult PhysicsBody::probe_right(uint16_t mask_) {
     bn::fixed hw = pos.width / 2;
     return CollisionRegistry::check_rect(
-        pos.x + hw + 1, pos.y, 1, pos.height - 2, mask, _skip_body);
+        pos.x + hw + 1, pos.y, 1, pos.height - 2, mask_, _skip_body);
 }
