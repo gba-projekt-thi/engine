@@ -52,26 +52,58 @@ core::SceneManager::instance().set_next_scene(bn::make_unique<MainMenu>());
 ---
 
 ## ⚠️ Constructor vs. `init()`
-This rule is critical for the SceneManager.
+This rule is critical to prevent VRAM overflows, glitches, and black screens. You must strictly separate where a variable is declared and where its VRAM memory is allocated.
 
-- The **constructor** should only initialize simple data: primitive members, IDs, and state variables.
-- Anything that uses **VRAM** (Sprites, Backgrounds, Palettes, Audio, Maps, Animations) should be created in `init()`.
+### The Rule: Declare in Header, Allocate in init()
+1. Header File (.h): Always declare your visual objects (Sprites, Backgrounds, Vectors) here as private member variables (using bn::optional or standard types).
 
-Why? The SceneManager clears the old scene's VRAM before calling `init()` on the new scene.
-If the new scene loads graphics in its constructor, the transition can still cause VRAM conflicts or visible flicker.
+- Effect: This gives the variable a permanent name and lifetime. It takes up a few bytes in EWRAM, but allocates NO VRAM yet.
+
+2. Constructor: Only initialize primitive data (integers, booleans, IDs). Never touch graphics here!
+
+3. init() Method: This is where you actually create the graphics (e.g., calling .create_sprite()).
+
+- Effect: This allocates the actual, heavy pixel data in VRAM.
 
 ```cpp
+// .h
 class MyScene : public core::Scene {
-public:
-    MyScene() {
-        _score = 0; // OK
-    }
+private:
+    // 1. DECLARATION (EWRAM only - No VRAM allocated yet!)
+    // These must be class members so they survive the end of init()
+    bn::optional<bn::sprite_ptr> _player_sprite;
+    bn::optional<bn::regular_bg_ptr> _bg;
+    int _score;
 
-    void init() override {
-        _player_sprite = bn::sprite_items::player.create_sprite(0, 0);
-        _bg = bn::regular_bg_items::level.create_bg(0, 0);
-    }
+public:
+    // 2. CONSTRUCTOR (Kept safe and lightweight)
+    MyScene();
+
+    // Lifecycle methods called by the SceneManager
+    void init() override;
+    void update() override;
 };
+
+// .cpp
+
+// Constructor: Primitives are fine. Keep graphics out of here!
+MyScene::MyScene() {
+    _score = 0; 
+}
+
+// init(): VRAM is now clear and safe to use!
+void MyScene::init() {
+    // 3. ALLOCATION: Assign the actual graphics to your pre-declared member variables.
+    _player_sprite = bn::sprite_items::player.create_sprite(0, 0);
+    _bg = bn::regular_bg_items::level.create_bg(0, 0);
+    
+    // The assets stay alive in VRAM as long as this scene object exists!
+}
+
+// update(): Runs every frame
+void MyScene::update() {
+    // Game loop logic (movement, inputs, etc.)
+}
 ```
 
 ## 🎨 The Blending Rule
@@ -85,6 +117,36 @@ bg.set_blending_enabled(true);
 ```
 
 Without this, the level may remain visible during fade-out and then suddenly disappear when the scene is destroyed. Only with blending enabled does the whole image fade correctly to black.
+
+## 🎵 How to use Music Transitions & Fading
+The SceneManager features a flexible audio system via AudioOptions. You can decide for each scene transition whether the music should fade smoothly, cut instantly, or keep playing.
+
+### 1. Standard Behavior: Smooth Fading
+By default (if fade_music is enabled), the manager dims the volume to 0% during FADE_OUT and raises it back to 100% during FADE_IN.
+
+Always start your new track at the end of the new scene's init() method:
+
+```cpp
+void Level1::init() override {
+    // Allocate graphics first...
+    
+    // Start music: SceneManager automatically catches this and fades it in from 0%
+    bn::music_items::level_1_theme.play(); 
+}
+```
+
+### 2. Advanced Configurations (AudioOptions)
+Before triggering a scene change, you can fine-tune the music behavior using the manager's options:
+
+- Seamless Continuity (Same Track): If Scene 1 and Scene 2 share the same background track, simply do not call .play() in Scene 2's init(). The manager will let the song play continuously, only fading the volume down and up.
+
+- Instant Stop (No Fade): If you want the music to cut hard the exact millisecond the player presses a button (e.g., hitting "Pause" or dying fast), set:
+
+```cpp
+// Music stops instantly before the visual screen fade even begins
+core::SceneManager::instance().set_audio_options({ .stop_music_instantly = true });
+core::SceneManager::instance().set_next_scene(bn::make_unique<GameOverScene>());
+```
 
 # 💾 Persistence Pattern: Handling Data across Scenes
 
