@@ -1,4 +1,5 @@
 #include "collision_registry.h"
+#include "bn_assert.h"
 #include "static_body.h"
 #include "collision_shape.h"
 #include "physics_body.h"
@@ -13,10 +14,16 @@ CollisionRegistry& CollisionRegistry::instance() {
 // =============================================================================
 
 void CollisionRegistry::register_body(StaticBody* b) {
-    if(_static_body_count < MAX_STATIC_BODIES) {
-        _static_bodies[_static_body_count] = b;
-        ++_static_body_count;
-    }
+    // Fail loudly rather than silently dropping the body: with
+    // MAX_STATIC_BODIES derived from Cfg::Level::Limits, this should be
+    // unreachable in practice. Hitting it means a level exceeds the
+    // documented per-level object limits.
+    BN_ASSERT(
+        _static_body_count < MAX_STATIC_BODIES,
+        "StaticBody registry full - increase "
+        "Cfg::Level::Limits::MAX_STATIC_BODIES");
+    _static_bodies[_static_body_count] = b;
+    ++_static_body_count;
 }
 
 void CollisionRegistry::unregister_body(StaticBody* b) {
@@ -34,10 +41,12 @@ void CollisionRegistry::unregister_body(StaticBody* b) {
 // =============================================================================
 
 void CollisionRegistry::register_physics_body(PhysicsBody* b) {
-    if(_physics_body_count < MAX_PHYSICS_BODIES) {
-        _physics_bodies[_physics_body_count] = b;
-        ++_physics_body_count;
-    }
+    BN_ASSERT(
+        _physics_body_count < MAX_PHYSICS_BODIES,
+        "PhysicsBody registry full - increase "
+        "Cfg::Level::Limits::MAX_PHYSICS_BODIES");
+    _physics_bodies[_physics_body_count] = b;
+    ++_physics_body_count;
 }
 
 void CollisionRegistry::unregister_physics_body(PhysicsBody* b) {
@@ -55,10 +64,12 @@ void CollisionRegistry::unregister_physics_body(PhysicsBody* b) {
 // =============================================================================
 
 void CollisionRegistry::register_shape(CollisionShape* s) {
-    if(_collision_shape_count < MAX_COLLISION_SHAPES) {
-        _collision_shapes[_collision_shape_count] = s;
-        ++_collision_shape_count;
-    }
+    BN_ASSERT(
+        _collision_shape_count < MAX_COLLISION_SHAPES,
+        "CollisionShape registry full - increase "
+        "Cfg::Level::Limits::MAX_COLLISION_SHAPES");
+    _collision_shapes[_collision_shape_count] = s;
+    ++_collision_shape_count;
 }
 
 void CollisionRegistry::unregister_shape(CollisionShape* s) {

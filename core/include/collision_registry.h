@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bn_fixed.h"
+#include "cfg_core.h"
 
 // forward declarations
 class StaticBody;
@@ -84,15 +85,22 @@ public:
 private:
     CollisionRegistry() = default;
 
-    static constexpr int MAX_STATIC_BODIES = 64;
+    // Capacities are derived from Cfg::Game::Limits (see cfg.h) instead of
+    // being independent magic numbers here, so they can never silently
+    // drift out of sync with what a single level is actually allowed to
+    // contain (platforms + triggers + traps + player + door).
+    static constexpr int MAX_STATIC_BODIES =
+        static_cast<int>(Cfg_Core::Game::Limits::MAX_STATIC_BODIES);
     StaticBody* _static_bodies[MAX_STATIC_BODIES] = {};
     int _static_body_count = 0;
 
-    static constexpr int MAX_PHYSICS_BODIES = 16;
+    static constexpr int MAX_PHYSICS_BODIES =
+        static_cast<int>(Cfg_Core::Game::Limits::MAX_PHYSICS_BODIES);
     PhysicsBody* _physics_bodies[MAX_PHYSICS_BODIES] = {};
     int _physics_body_count = 0;
 
-    static constexpr int MAX_COLLISION_SHAPES = 32;
+    static constexpr int MAX_COLLISION_SHAPES =
+        static_cast<int>(Cfg_Core::Game::Limits::MAX_COLLISION_SHAPES);
     CollisionShape* _collision_shapes[MAX_COLLISION_SHAPES] = {};
     int _collision_shape_count = 0;
 
