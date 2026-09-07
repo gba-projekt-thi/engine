@@ -84,15 +84,19 @@ public:
 private:
     CollisionRegistry() = default;
 
-    static constexpr int MAX_STATIC_BODIES = 64;
+    // Sized with margin above worst-case Cfg::Level::Limits usage:
+    // PLATFORM_BODIES(32) + TRIGGERS(16) + TOTAL_TRAPS(32) + Door(1) + Player(1)
+    static constexpr int MAX_STATIC_BODIES = 96;
     StaticBody* _static_bodies[MAX_STATIC_BODIES] = {};
     int _static_body_count = 0;
 
-    static constexpr int MAX_PHYSICS_BODIES = 16;
+    // TRIGGERS(16) + TOTAL_TRAPS(32) + Door(1) + Player(1) = 50 worst-case
+    static constexpr int MAX_PHYSICS_BODIES = 64;
     PhysicsBody* _physics_bodies[MAX_PHYSICS_BODIES] = {};
     int _physics_body_count = 0;
 
-    static constexpr int MAX_COLLISION_SHAPES = 32;
+    // Same worst-case count as physics bodies (every PhysicsBody is also a CollisionShape)
+    static constexpr int MAX_COLLISION_SHAPES = 64;
     CollisionShape* _collision_shapes[MAX_COLLISION_SHAPES] = {};
     int _collision_shape_count = 0;
 

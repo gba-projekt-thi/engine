@@ -1,3 +1,4 @@
+#include "bn_log.h"
 #include "collision_registry.h"
 #include "static_body.h"
 #include "collision_shape.h"
@@ -16,6 +17,8 @@ void CollisionRegistry::register_body(StaticBody* b) {
     if(_static_body_count < MAX_STATIC_BODIES) {
         _static_bodies[_static_body_count] = b;
         ++_static_body_count;
+    } else {
+        BN_LOG("[ERROR] CollisionRegistry: MAX_STATIC_BODIES exceeded, body dropped");
     }
 }
 
@@ -37,6 +40,8 @@ void CollisionRegistry::register_physics_body(PhysicsBody* b) {
     if(_physics_body_count < MAX_PHYSICS_BODIES) {
         _physics_bodies[_physics_body_count] = b;
         ++_physics_body_count;
+    } else {
+        BN_LOG("[ERROR] CollisionRegistry: MAX_PHYSICS_BODIES exceeded, body dropped");
     }
 }
 
@@ -58,6 +63,8 @@ void CollisionRegistry::register_shape(CollisionShape* s) {
     if(_collision_shape_count < MAX_COLLISION_SHAPES) {
         _collision_shapes[_collision_shape_count] = s;
         ++_collision_shape_count;
+    } else {
+        BN_LOG("[ERROR] CollisionRegistry: MAX_COLLISION_SHAPES exceeded, shape dropped");
     }
 }
 
