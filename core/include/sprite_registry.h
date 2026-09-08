@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bn_log.h"
 #include "camera.h"
 
 class Sprite;
@@ -16,6 +17,8 @@ public:
         if(_count < MAX_SPRITES) {
             _sprites[_count] = s;
             ++_count;
+        } else {
+            BN_LOG("[ERROR] SpriteRegistry: MAX_SPRITES exceeded, sprite dropped");
         }
     }
 
@@ -35,7 +38,7 @@ public:
 private:
     SpriteRegistry() = default;
 
-    static constexpr int MAX_SPRITES = 64;
+    static constexpr int MAX_SPRITES = 72;
     Sprite* _sprites[MAX_SPRITES] = {};
     int _count = 0;
 };
