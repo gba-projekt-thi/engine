@@ -34,6 +34,7 @@ constexpr auto log_category_name(LogCategory category) -> const char* {
     case LogCategory::Audio:     return "Audio";
     case LogCategory::Scene:     return "Scene";
     case LogCategory::Save:      return "Save";
+    default:                     return "Unknown";
     }
 
     return "Unknown";

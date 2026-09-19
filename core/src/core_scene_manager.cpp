@@ -1,5 +1,6 @@
 #include "core_scene_manager.h"
 #include "audio_settings.h"
+#include "log.h"
 #include "bn_blending.h"
 #include "bn_music.h"
 #include "bn_colors.h"
@@ -119,6 +120,9 @@ namespace core
                 bn::music::set_volume(AudioSettings::instance().music_scale());
             }
             break;
+            
+        default:
+            BN_LOG_ERROR(LogCategory::Collision, "Scene state not defined.");
         }
     }
 
