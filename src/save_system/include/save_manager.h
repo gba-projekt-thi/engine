@@ -3,6 +3,7 @@
 #include "save_header.h"
 #include "save_buffer.h"
 #include "save_integrity.h"
+#include "save_migration.h"
 #include "save_slot.h"
 #include "bn_sram.h"
 
@@ -20,8 +21,16 @@ enum class SaveResult
     CHECKSUM_FAIL,
     VERSION_MISMATCH,
     SRAM_ERROR,
-    SERIALIZE_ERROR
+    SERIALIZE_ERROR,
+    /** Loaded from an older schema: newer fields hold their defaults. */
+    MIGRATED
 };
+
+/** True for OK and MIGRATED - the state was loaded and is usable. */
+inline auto succeeded(SaveResult result) -> bool
+{
+    return result == SaveResult::OK || result == SaveResult::MIGRATED;
+}
 
 /**
  * @brief Generic save manager for GBA games.
@@ -39,7 +48,7 @@ enum class SaveResult
  *   save_mgr.save(0, state);
  *
  *   MyState loaded;
- *   if(save_mgr.load(0, loaded) == engine::save::SaveResult::OK) { ... }
+ *   if(engine::save::succeeded(save_mgr.load(0, loaded, &my_valid_bytes))) { ... }
  * @endcode
  */
 template<typename GameState, int MaxSlots = 3, int BufferSize = 512>
@@ -96,8 +105,15 @@ public:
 
     /**
      * @brief Loads the game state from a slot.
+     *
+     * @param valid_bytes Optional migration table (see ValidBytesFn). With it,
+     *        a payload written by an older schema version is accepted: its
+     *        valid prefix is copied and the remaining (newer) fields keep their
+     *        default values; the result is MIGRATED. Without it the payload
+     *        must match sizeof(GameState) exactly (SERIALIZE_ERROR otherwise).
+     *        A version the table cannot migrate returns VERSION_MISMATCH.
      */
-    SaveResult load(int slot_id, GameState& state)
+    SaveResult load(int slot_id, GameState& state, ValidBytesFn valid_bytes = nullptr)
     {
         if(slot_id < 0 || slot_id >= MaxSlots)
         {
@@ -135,17 +151,19 @@ public:
             return SaveResult::CHECKSUM_FAIL;
         }
 
-        // Deserialize
-        SaveBuffer<BufferSize> buf;
-        std::memcpy(buf.data, slot.payload, payload_size);
-        buf.size = payload_size;
-
-        if(!buf.read(state))
+        // Deserialize (migrating older layouts when a table is given)
+        switch(restore_state(slot.payload, payload_size, slot.header.version,
+                             valid_bytes, state))
         {
-            return SaveResult::SERIALIZE_ERROR;
+        case RestoreResult::Exact:
+            return SaveResult::OK;
+        case RestoreResult::Migrated:
+            return SaveResult::MIGRATED;
+        case RestoreResult::Incompatible:
+        default:
+            return valid_bytes != nullptr ? SaveResult::VERSION_MISMATCH
+                                          : SaveResult::SERIALIZE_ERROR;
         }
-
-        return SaveResult::OK;
     }
 
     /**
