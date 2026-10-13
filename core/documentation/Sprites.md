@@ -75,7 +75,9 @@ Writing a `Player` class from `PhysicsBody` will move the `Sprite` on every move
 `SpriteRegistry` (singleton) keeps track of all sprites. It provides a function to sync every sprite to the camera each frame.
 
 **Array Size**:
-- `MAX_SPRITES = 64`
+- `MAX_SPRITES = 72`
+
+A sprite registered beyond the capacity is dropped (logged as an error) and then no longer follows the camera. The GBA has 128 hardware sprites in total (hidden ones included), so text, HUD and menus have to fit next to the registered sprites - the game's `tools/Check_sprite_budget.py` counts this per level.
 
 <br>
 
