@@ -40,9 +40,18 @@ public:
         _y = target_y;
     }
 
+    // Screen shake: a pixel offset added to every world -> screen conversion
+    // (so everything registered with SpriteRegistry shakes), but NOT to
+    // bg_x()/bg_y() and not to screen-locked sprites such as the HUD. Set once
+    // per rendered frame by LevelManager; (0, 0) = no shake.
+    void set_shake(bn::fixed x, bn::fixed y) {
+        _shake_x = x;
+        _shake_y = y;
+    }
+
     // world → screen (Butano screen center = 0,0)
-    bn::fixed to_screen_x(bn::fixed world_x) const { return world_x - _x; }
-    bn::fixed to_screen_y(bn::fixed world_y) const { return world_y - _y; }
+    bn::fixed to_screen_x(bn::fixed world_x) const { return world_x - _x + _shake_x; }
+    bn::fixed to_screen_y(bn::fixed world_y) const { return world_y - _y + _shake_y; }
 
     // BG offset: the background is authored with its own center at world
     // (0,0), so panning it by -camera moves it opposite to the camera pan.
@@ -60,6 +69,8 @@ private:
 
     bn::fixed _x = 0;
     bn::fixed _y = 0;
+    bn::fixed _shake_x = 0;
+    bn::fixed _shake_y = 0;
     bn::fixed _world_width = 0;
     bn::fixed _world_height = 0;
 };
