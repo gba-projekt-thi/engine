@@ -112,8 +112,12 @@ public:
      *        default values; the result is MIGRATED. Without it the payload
      *        must match sizeof(GameState) exactly (SERIALIZE_ERROR otherwise).
      *        A version the table cannot migrate returns VERSION_MISMATCH.
+     * @param version Optional: receives the schema version the slot was
+     *        written with, for migrations that change values rather than
+     *        the layout.
      */
-    SaveResult load(int slot_id, GameState& state, ValidBytesFn valid_bytes = nullptr)
+    SaveResult load(int slot_id, GameState& state, ValidBytesFn valid_bytes = nullptr,
+                    uint16_t* version = nullptr)
     {
         if(slot_id < 0 || slot_id >= MaxSlots)
         {
@@ -149,6 +153,11 @@ public:
         if(!validate_checksum(slot.header, slot.payload, payload_size))
         {
             return SaveResult::CHECKSUM_FAIL;
+        }
+
+        if(version != nullptr)
+        {
+            *version = slot.header.version;
         }
 
         // Deserialize (migrating older layouts when a table is given)
