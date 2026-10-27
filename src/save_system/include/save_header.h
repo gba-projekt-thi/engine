@@ -33,7 +33,7 @@ struct SaveHeader
 constexpr uint32_t SAVE_MAGIC = 0x53414247; // "GBAS" in little-endian
 
 /** Current schema version */
-constexpr uint16_t SAVE_VERSION = 10;
+constexpr uint16_t SAVE_VERSION = 11;
 
 } // namespace save
 } // namespace engine
