@@ -119,7 +119,7 @@ bg.set_blending_enabled(true);
 Without this, the level may remain visible during fade-out and then suddenly disappear when the scene is destroyed. Only with blending enabled does the whole image fade correctly to black.
 
 ## 🎵 How to use Music Transitions & Fading
-The SceneManager features a flexible audio system via AudioOptions. You can decide for each scene transition whether the music should fade smoothly, cut instantly, or keep playing.
+The SceneManager features a flexible audio system via `AudioTransitionOptions`. You can decide for each scene transition whether the music should fade smoothly, cut instantly, or keep playing.
 
 ### 1. Standard Behavior: Smooth Fading
 By default (if fade_music is enabled), the manager dims the volume to 0% during FADE_OUT and raises it back to 100% during FADE_IN.
@@ -135,17 +135,19 @@ void Level1::init() override {
 }
 ```
 
-### 2. Advanced Configurations (AudioOptions)
-Before triggering a scene change, you can fine-tune the music behavior using the manager's options:
+### 2. Advanced Configurations (AudioTransitionOptions)
+Before triggering a scene change, you can fine-tune the music behavior by passing a `core::AudioTransitionOptions` (`fade_music`, `stop_music_instantly`) as the second argument of `set_next_scene()`:
 
 - Seamless Continuity (Same Track): If Scene 1 and Scene 2 share the same background track, simply do not call .play() in Scene 2's init(). The manager will let the song play continuously, only fading the volume down and up.
 
-- Instant Stop (No Fade): If you want the music to cut hard the exact millisecond the player presses a button (e.g., hitting "Pause" or dying fast), set:
+- Instant Stop (No Fade): If you want the music to cut hard the exact millisecond the player presses a button (e.g., hitting "Pause" or dying fast), pass the option to `set_next_scene()`:
 
 ```cpp
 // Music stops instantly before the visual screen fade even begins
-core::SceneManager::instance().set_audio_options({ .stop_music_instantly = true });
-core::SceneManager::instance().set_next_scene(bn::make_unique<GameOverScene>());
+core::AudioTransitionOptions audio_opts;
+audio_opts.stop_music_instantly = true;
+core::SceneManager::instance().set_next_scene(
+    bn::make_unique<GameOverScene>(), audio_opts);
 ```
 
 # 💾 Persistence Pattern: Handling Data across Scenes

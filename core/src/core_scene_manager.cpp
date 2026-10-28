@@ -1,4 +1,6 @@
 #include "core_scene_manager.h"
+#include "audio_settings.h"
+#include "log.h"
 #include "bn_blending.h"
 #include "bn_music.h"
 #include "bn_colors.h"
@@ -71,7 +73,7 @@ namespace core
                 // AUDIO: Fade music linearly (only if instant stop is not active)
                 if (_audio_opts.fade_music && !_audio_opts.stop_music_instantly)
                 {
-                    bn::music::set_volume(1.0 - progress);
+                    bn::music::set_volume(AudioSettings::instance().music_scale() * (1 - progress));
                 }
             }
             if (_fade_counter >= FADE_FRAMES)
@@ -102,7 +104,7 @@ namespace core
                 // AUDIO: Fade music in linearly
                 if (_audio_opts.fade_music && !_audio_opts.stop_music_instantly)
                 {
-                    bn::music::set_volume(1.0 - progress);
+                    bn::music::set_volume(AudioSettings::instance().music_scale() * (1 - progress));
                 }
             }
 
@@ -115,9 +117,12 @@ namespace core
                 bn::blending::set_fade_alpha(0);
 
                 // AUDIO: Safety net — restore volume to full for the next scene
-                bn::music::set_volume(1.0);
+                bn::music::set_volume(AudioSettings::instance().music_scale());
             }
             break;
+            
+        default:
+            BN_LOG_ERROR(LogCategory::Collision, "Scene state not defined.");
         }
     }
 

@@ -197,10 +197,12 @@ The `CollisionRegistry` is the central bookkeeping system (Singleton) for all co
 The Registry holds for `StaticBody` `CollisionShape` `PhysicsBody` `MapRect` an Array and `register_..()` / `unregister_..()` functions. 
 
 **Array Sizes**:
-- `MAX_STATIC_BODIES = 64`
-- `MAX_PHYSICS_BODIES = 16`
-- `MAX_COLLISION_SHAPES = 32`
+- `MAX_STATIC_BODIES = 96`
+- `MAX_PHYSICS_BODIES = 64`
+- `MAX_COLLISION_SHAPES = 64`
 - `MAX_MAP_RECTS = 32`
+
+The capacities are sized for the worst case of the game's per-level entity limits (platform bodies, triggers, traps, checkpoints, door and player). The game's `tools/Check_sprite_budget.py` checks that they still cover those limits.
 
 <br>
 

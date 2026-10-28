@@ -19,6 +19,17 @@ public:
         SpriteRegistry::instance().register_sprite(this);
     }
 
+    // Non-copyable, non-movable: SpriteRegistry stores a raw `this` pointer,
+    // so a Sprite must never change address after construction.
+    Sprite(const Sprite&) = delete;
+    Sprite& operator=(const Sprite&) = delete;
+    Sprite(Sprite&&) = delete;
+    Sprite& operator=(Sprite&&) = delete;
+
+    ~Sprite() {
+        SpriteRegistry::instance().unregister_sprite(this);
+    }
+
     void enable() {
         _enabled = true;
         _sprite.set_visible(true);

@@ -2,6 +2,7 @@
 #include "sprite.h"
 #include "collision_registry.h"
 #include "bn_math.h"
+#include "move_resolution.h"
 
 // =============================================================================
 // Construction
@@ -77,47 +78,35 @@ void PhysicsBody::dec_velocity(bn::fixed dx, bn::fixed dy) {
 void PhysicsBody::move(bn::fixed dx, bn::fixed dy) {
     CollisionRegistry& reg = CollisionRegistry::instance();
 
-    // --- resolve X ---
-    bn::fixed nx = pos.x + dx;
-    bool blocked_x = _collides_with_map(nx, pos.y);
-
-    if(!blocked_x) {
+    // Whether the body would overlap the map or any other enabled body at
+    // (nx, ny).
+    auto blocked_at = [this, &reg](bn::fixed nx, bn::fixed ny) {
+        if(_collides_with_map(nx, ny)) {
+            return true;
+        }
         for(int i = 0; i < reg.get_static_body_count(); ++i) {
             StaticBody* other = reg.get_static_bodies()[i];
             if(other != static_cast<StaticBody*>(this) &&
                other->is_enabled() &&
-               _collides_with_body(*other, nx, pos.y)) {
-                blocked_x = true;
-                break;
+               _collides_with_body(*other, nx, ny)) {
+                return true;
             }
         }
-    }
+        return false;
+    };
 
-    if(!blocked_x) {
-        pos.x = nx;
-    } else {
+    // --- resolve X, then Y: a blocked move goes up to the obstacle ---
+    const AxisMove move_x = resolve_axis(
+        pos.x, dx, [&](bn::fixed nx) { return blocked_at(nx, pos.y); });
+    pos.x = move_x.position;
+    if(move_x.blocked) {
         vel_x = 0;
     }
 
-    // --- resolve Y ---
-    bn::fixed ny = pos.y + dy;
-    bool blocked_y = _collides_with_map(pos.x, ny);
-
-    if(!blocked_y) {
-        for(int i = 0; i < reg.get_static_body_count(); ++i) {
-            StaticBody* other = reg.get_static_bodies()[i];
-            if(other != static_cast<StaticBody*>(this) &&
-               other->is_enabled() &&
-               _collides_with_body(*other, pos.x, ny)) {
-                blocked_y = true;
-                break;
-            }
-        }
-    }
-
-    if(!blocked_y) {
-        pos.y = ny;
-    } else {
+    const AxisMove move_y = resolve_axis(
+        pos.y, dy, [&](bn::fixed ny) { return blocked_at(pos.x, ny); });
+    pos.y = move_y.position;
+    if(move_y.blocked) {
         vel_y = 0;
     }
 
